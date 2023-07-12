@@ -18,11 +18,18 @@ FetchContent_MakeAvailable(hello_imgui)
 list(APPEND CMAKE_MODULE_PATH ${HELLOIMGUI_CMAKE_PATH})
 include(hello_imgui_add_app)
 
+# TODO: figure out why this isn't building
 # set(CRYPTOPP_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/cryptopp")
 add_subdirectory(cryptopp-cmake)
 
 ##########################################################
 # Build your app
 ##########################################################
-hello_imgui_add_app(cryptotools main.cpp)
+FILE(GLOB SOURCES_CRYPTOTOOLS 
+    ${CMAKE_CURRENT_LIST_DIR}/*.h
+    ${CMAKE_CURRENT_LIST_DIR}/*.cpp
+    )
+
+hello_imgui_add_app(cryptotools ${SOURCES_CRYPTOTOOLS})
 target_link_libraries(cryptotools PRIVATE cryptopp)
+target_include_directories(cryptotools PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
