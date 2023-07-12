@@ -1,3 +1,6 @@
-[submodule "hello_imgui"]
-	path = hello_imgui
-	url = https://github.com/pthom/hello_imgui.git
+[submodule "cryptopp-cmake"]
+	path = cryptopp-cmake
+	url = https://github.com/abdes/cryptopp-cmake
+[submodule "cryptopp"]
+	path = cryptopp
+	url = https://github.com/weidai11/cryptopp
