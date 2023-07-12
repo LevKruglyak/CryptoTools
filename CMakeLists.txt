@@ -18,7 +18,7 @@ FetchContent_MakeAvailable(hello_imgui)
 list(APPEND CMAKE_MODULE_PATH ${HELLOIMGUI_CMAKE_PATH})
 include(hello_imgui_add_app)
 
-set(CRYPTOPP_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/cryptopp")
+# set(CRYPTOPP_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/cryptopp")
 add_subdirectory(cryptopp-cmake)
 
 ##########################################################
