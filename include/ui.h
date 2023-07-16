@@ -7,7 +7,7 @@
 
 class Input {
 public:
-  Input();
+  Input(std::string label) : label(label) {}
 
   bool Render();
 
@@ -23,13 +23,15 @@ private:
   InputFormat format;
   std::string text;
   std::string bytes;
+
+  std::string label;
 };
 
 class Output {
 public:
-  Output();
+  Output(std::string label) : label(label) {}
 
-  void Render();
+  bool Render();
 
   enum OutputFormat {
     CHAR = 0,
@@ -46,4 +48,6 @@ private:
   OutputFormat format;
   std::string text;
   std::string bytes;
+
+  std::string label;
 };

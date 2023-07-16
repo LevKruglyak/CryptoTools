@@ -4,3 +4,6 @@
 [submodule "cryptopp"]
 	path = cryptopp
 	url = https://github.com/weidai11/cryptopp
+[submodule "fmt"]
+	path = fmt
+	url = https://github.com/fmtlib/fmt.git

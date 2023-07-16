@@ -1,93 +1,168 @@
 #include "ui.h"
 #include "imgui.h"
 #include "utils.h"
+#include <fmt/format.h>
+#include <iostream>
 
-Input::Input() {}
+template <typename... Args>
+inline std::string _format(std::string_view format, Args... args) {
+  return fmt::format(fmt::runtime(format), args...);
+}
 
-Output::Output() {}
+void HexViewer(std::string bytes, float clip) {
+  static const std::string Header =
+      " Address      00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F          "
+      "             ";
+  static const std::string NoData =
+      "                                                      No Data!          "
+      "              ";
 
-void Output::Render() {
+  ImGui::Separator();
+  if (ImGui::BeginChild("##hex_view",
+                        ImVec2(ImGui::CalcTextSize(Header.c_str()).x, clip)),
+      true) {
+    ImGui::TextDisabled("%s", Header.c_str());
+
+    auto size = bytes.size();
+    if (size == 0) {
+      ImGui::TextUnformatted(NoData.c_str());
+    } else {
+      ImGuiListClipper clipper;
+
+      clipper.Begin((size + 0x0F) / 0x10);
+
+      while (clipper.Step())
+        for (auto y = clipper.DisplayStart; y < clipper.DisplayEnd; y++) {
+          auto lineSize = ((size - y * 0x10) < 0x10) ? size % 0x10 : 0x10;
+
+          ImGui::TextDisabled("%s", _format(" {:07X}:  ", y * 0x10).c_str());
+          std::string line;
+
+          for (unsigned int x = 0; x < 0x10; x++) {
+            if (x < lineSize)
+              line += _format("{:02X} ", bytes[y * 0x10 + x]);
+            else
+              line += "   ";
+
+            if (x == 7)
+              line += " ";
+          }
+
+          ImGui::SameLine();
+          ImGui::TextUnformatted(line.c_str());
+        }
+      clipper.End();
+    }
+  }
+  ImGui::EndChild();
+  ImGui::Separator();
+}
+
+bool Output::Render() {
+  ImGui::PushID(this);
   bool modified = false;
 
-  if (ImGui::Combo("Output Format", (int *)&format,
-                   "char\0hex\0hexdump\0decimal\0java\0c\0\0")) {
-    modified = true;
+  if (ImGui::CollapsingHeader(label.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+
+    ImGui::TextUnformatted("Format: ");
+    ImGui::SameLine();
+    if (ImGui::Combo("##ui_output_format", (int *)&format,
+                     "char\0hex\0hexdump\0decimal\0java\0c\0\0")) {
+      modified = true;
+    }
+
+    ImGuiTextFlags flags = ImGuiInputTextFlags_ReadOnly;
+    bool notext = false;
+
+    switch (format) {
+    case OutputFormat::CHAR:
+      text = bytes;
+      break;
+    case OutputFormat::HEX:
+      text = hexEncode(bytes);
+      break;
+    case OutputFormat::HEXDUMP:
+      HexViewer(bytes, ImGui::GetTextLineHeight() * 8);
+      notext = true;
+      break;
+    case OutputFormat::DECIMAL:
+      text = bytes;
+      break;
+    case OutputFormat::JAVA:
+      text = bytes;
+      break;
+    case OutputFormat::C:
+      text = bytes;
+      break;
+    }
+
+    if (!notext) {
+      if (ImGui::InputTextMultiline(
+              "##ui_output", &text,
+              ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 8), flags)) {
+      }
+    }
+
+    ImGui::PopID();
   }
 
-  ImGuiTextFlags flags = ImGuiInputTextFlags_ReadOnly;
-  switch (format) {
-  case OutputFormat::CHAR:
-    text = bytes;
-    break;
-  case OutputFormat::HEX:
-    text = hexEncode(bytes);
-    break;
-  case OutputFormat::HEXDUMP:
-    text = hexdump(bytes);
-    break;
-  case OutputFormat::DECIMAL:
-    text = bytes;
-    break;
-  case OutputFormat::JAVA:
-    text = bytes;
-    break;
-  case OutputFormat::C:
-    text = bytes;
-    break;
-  }
-
-  if (ImGui::InputTextMultiline(
-          "_", &text, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 16),
-          flags)) {
-  }
+  return modified;
 }
 
 bool Input::Render() {
+  ImGui::PushID(this);
   bool modified = false;
 
-  if (ImGui::Combo("Input Format", (int *)&format, "char\0hex\0decimal\0\0")) {
-    modified = true;
-  }
+  if (ImGui::CollapsingHeader(label.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
 
-  ImGuiTextFlags flags = 0;
-  switch (format) {
-  case InputFormat::CHAR:
-    break;
-  case InputFormat::HEX:
-    flags |= ImGuiInputTextFlags_CharsHexadecimal;
-    break;
-  case InputFormat::DECIMAL:
-    flags |= ImGuiInputTextFlags_CharsDecimal;
-    break;
-  }
+    ImGui::TextUnformatted("Format: ");
+    ImGui::SameLine();
+    if (ImGui::Combo("##ui_input_format", (int *)&format,
+                     "char\0hex\0decimal\0\0")) {
+      modified = true;
+    }
 
-  if (ImGui::InputTextMultiline(
-          "", &text, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 16),
-          flags)) {
-    modified = true;
-  }
-
-  if (modified) {
+    ImGuiTextFlags flags = 0;
     switch (format) {
     case InputFormat::CHAR:
-      bytes = text;
       break;
     case InputFormat::HEX:
-      bytes = hexDecode(text);
+      flags |= ImGuiInputTextFlags_CharsHexadecimal;
       break;
     case InputFormat::DECIMAL:
-      bytes = text;
+      flags |= ImGuiInputTextFlags_CharsDecimal;
       break;
+    }
+
+    if (ImGui::InputTextMultiline(
+            "##ui_input", &text,
+            ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 8), flags)) {
+      modified = true;
+    }
+
+    if (modified) {
+      switch (format) {
+      case InputFormat::CHAR:
+        bytes = text;
+        break;
+      case InputFormat::HEX:
+        bytes = hexDecode(text);
+        break;
+      case InputFormat::DECIMAL:
+        bytes = text;
+        break;
+      }
+    }
+
+    ImGui::Text("Total Size: %d bytes", (int)bytes.size());
+
+    if (ImGui::TreeNode("Preview:")) {
+      HexViewer(bytes, 200);
+      ImGui::TreePop();
     }
   }
 
-  if (ImGui::TreeNode("Preview:")) {
-    std::string hexPreview = hexdump(bytes);
-    ImGui::TextUnformatted(hexPreview.c_str());
-    ImGui::TreePop();
-  }
-
-  ImGui::Text("Total Size: %d bytes", (int)bytes.size());
+  ImGui::PopID();
 
   return modified;
 }

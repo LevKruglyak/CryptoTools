@@ -21,6 +21,7 @@ include(hello_imgui_add_app)
 # TODO: figure out why this isn't building
 # set(CRYPTOPP_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/cryptopp")
 add_subdirectory(cryptopp-cmake)
+add_subdirectory(fmt)
 
 ##########################################################
 # Build your app
@@ -31,5 +32,6 @@ FILE(GLOB SOURCES_CRYPTOTOOLS
     )
 
 hello_imgui_add_app(cryptotools ${SOURCES_CRYPTOTOOLS})
+target_link_libraries(cryptotools PRIVATE fmt)
 target_link_libraries(cryptotools PRIVATE cryptopp)
 target_include_directories(cryptotools PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")

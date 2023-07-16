@@ -82,17 +82,6 @@ void showWindow(std::string name) {
   }
 }
 
-// The Gui of the command panel
-void CommandGui(AppState &appState) {
-  ImGui::PushFont(gTitleFont);
-  ImGui::Text("Algorithms");
-  ImGui::Separator();
-  if (ImGui::Button("Hash")) {
-    showWindow("Hash");
-  }
-  ImGui::Separator();
-}
-
 // The Gui of the status bar
 void StatusBarGui(AppState &app_state) {}
 
@@ -129,27 +118,13 @@ std::vector<HelloImGui::DockingSplit> CreateDefaultDockingSplits() {
   splitMainMisc.direction = ImGuiDir_Down;
   splitMainMisc.ratio = 0.25f;
 
-  HelloImGui::DockingSplit splitMainCommand;
-  splitMainCommand.initialDock = "MainDockSpace";
-  splitMainCommand.newDock = "CommandSpace";
-  splitMainCommand.direction = ImGuiDir_Left;
-  splitMainCommand.ratio = 0.10f;
-  splitMainCommand.nodeFlags =
-      ImGuiDockNodeFlags_NoDocking | ImGuiDockNodeFlags_NoTabBar;
-
-  std::vector<HelloImGui::DockingSplit> splits{splitMainMisc, splitMainCommand};
+  std::vector<HelloImGui::DockingSplit> splits{splitMainMisc};
   return splits;
 }
 
 std::vector<HelloImGui::DockableWindow>
 CreateDockableWindows(AppState &appState) {
-  HelloImGui::DockableWindow commandsWindow;
-  commandsWindow.label = "Commands";
-  commandsWindow.dockSpaceName = "CommandSpace";
-  commandsWindow.GuiFunction = [&] { CommandGui(appState); };
-
   std::vector<HelloImGui::DockableWindow> dockableWindows{
-      commandsWindow,
       createHashWindow(),
   };
 
