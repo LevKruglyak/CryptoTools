@@ -13,8 +13,8 @@
 
 std::string inputBytes;
 
-Input input("Input Data:");
-Output output("Output Data:");
+Input input("Input");
+Output output("Output");
 
 template <typename HASH> std::string performHash(std::string input) {
   CryptoPP::byte digest[HASH::DIGESTSIZE];
@@ -27,7 +27,7 @@ void HashFunction() {
   static int algorithmId = 0;
   bool recaluclate = false;
 
-  if (ImGui::CollapsingHeader("Settings:", ImGuiTreeNodeFlags_DefaultOpen)) {
+  if (ImGui::CollapsingHeader("Algorithm", ImGuiTreeNodeFlags_DefaultOpen)) {
     const char *algorithms[] = {
         "MD5",        "RIPEMD160",  "SHA1",       "SHA2_224",
         "SHA2_256",   "SHA2_384",   "SHA2_512",   "SHA3_224",

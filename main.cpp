@@ -126,6 +126,8 @@ std::vector<HelloImGui::DockableWindow>
 CreateDockableWindows(AppState &appState) {
   std::vector<HelloImGui::DockableWindow> dockableWindows{
       createHashWindow(),
+      createArithmeticWindow(),
+      createScratchWindow(),
   };
 
   return dockableWindows;

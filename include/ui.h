@@ -7,7 +7,7 @@
 
 class Input {
 public:
-  Input(std::string label) : label(label) {}
+  Input(std::string label, int height = 8) : label(label), height(height) {}
 
   bool Render();
 
@@ -25,6 +25,7 @@ private:
   std::string bytes;
 
   std::string label;
+  int height;
 };
 
 class Output {

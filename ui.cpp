@@ -136,7 +136,7 @@ bool Input::Render() {
 
     if (ImGui::InputTextMultiline(
             "##ui_input", &text,
-            ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 8), flags)) {
+            ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * height), flags)) {
       modified = true;
     }
 
