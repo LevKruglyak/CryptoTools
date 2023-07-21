@@ -3,7 +3,7 @@
 #include <cfloat>
 #include <iostream>
 
-std::string buffer = "hello";
+std::string buffer = "";
 
 void ScratchFunction() {
   ImGui::InputTextMultiline("##scratch_input", &buffer,
