@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <sstream>
 
+namespace utils {
 std::string hexEncode(std::string input) {
   std::string encoded;
 
@@ -81,3 +82,4 @@ std::string hexdump(const std::string &input) {
 
   return os.str();
 }
+} // namespace utils

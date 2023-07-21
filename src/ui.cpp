@@ -1,13 +1,7 @@
 #include "ui.h"
 #include "imgui.h"
 #include "utils.h"
-#include <fmt/format.h>
 #include <iostream>
-
-template <typename... Args>
-inline std::string _format(std::string_view format, Args... args) {
-  return fmt::format(fmt::runtime(format), args...);
-}
 
 void HexViewer(std::string bytes, float clip) {
   static const std::string Header =
@@ -35,12 +29,13 @@ void HexViewer(std::string bytes, float clip) {
         for (auto y = clipper.DisplayStart; y < clipper.DisplayEnd; y++) {
           auto lineSize = ((size - y * 0x10) < 0x10) ? size % 0x10 : 0x10;
 
-          ImGui::TextDisabled("%s", _format(" {:07X}:  ", y * 0x10).c_str());
+          ImGui::TextDisabled("%s",
+                              utils::format(" {:07X}:  ", y * 0x10).c_str());
           std::string line;
 
           for (unsigned int x = 0; x < 0x10; x++) {
             if (x < lineSize)
-              line += _format("{:02X} ", bytes[y * 0x10 + x]);
+              line += utils::format("{:02X} ", bytes[y * 0x10 + x]);
             else
               line += "   ";
 
@@ -79,7 +74,7 @@ bool Output::Render() {
       text = bytes;
       break;
     case OutputFormat::HEX:
-      text = hexEncode(bytes);
+      text = utils::hexEncode(bytes);
       break;
     case OutputFormat::HEXDUMP:
       HexViewer(bytes, ImGui::GetTextLineHeight() * 8);
@@ -146,7 +141,7 @@ bool Input::Render() {
         bytes = text;
         break;
       case InputFormat::HEX:
-        bytes = hexDecode(text);
+        bytes = utils::hexDecode(text);
         break;
       case InputFormat::DECIMAL:
         bytes = text;

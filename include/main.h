@@ -19,3 +19,4 @@ extern const char *dockArea;
 HelloImGui::DockableWindow createHashWindow();
 HelloImGui::DockableWindow createArithmeticWindow();
 HelloImGui::DockableWindow createScratchWindow();
+HelloImGui::DockableWindow createNodesWindow();

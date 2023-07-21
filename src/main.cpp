@@ -128,6 +128,7 @@ CreateDockableWindows(AppState &appState) {
       createHashWindow(),
       createArithmeticWindow(),
       createScratchWindow(),
+      createNodesWindow(),
   };
 
   return dockableWindows;
