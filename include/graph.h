@@ -5,11 +5,11 @@
 #include <cryptopp/nbtheory.h>
 #include <map>
 #include <optional>
+#include <set>
 #include <variant>
 #include <vector>
 
-static int id = 0;
-inline int GenerateId() { return id++; }
+int GenerateId();
 
 class ImNodesComponent {
 public:
@@ -88,19 +88,44 @@ template <typename NODE> void CreateButton(Graph &graph, std::string label) {
   }
 }
 
+class Link : public ImNodesComponent {
+  std::variant<std::string, CryptoPP::Integer> data;
+
+public:
+  int in_node;
+  int in_attr;
+
+  int out_node;
+  int out_attr;
+
+  Link(int in_node, int in_attr, int out_node, int out_attr)
+      : in_node(in_node), in_attr(in_attr), out_node(out_node),
+        out_attr(out_attr), ImNodesComponent() {}
+
+  std::string &getBuffer() { return std::get<std::string>(data); }
+  void setBuffer(std::string buffer) { data = buffer; }
+
+  CryptoPP::Integer &getInteger() { return std::get<CryptoPP::Integer>(data); }
+  void setInteger(CryptoPP::Integer integer) { data = integer; }
+
+  void Display() { ImNodes::Link(id, in_attr, out_attr); }
+};
+
 class Node : public ImNodesComponent {
 protected:
   float width;
   std::string label;
 
 public:
+  bool processed;
+
   std::vector<Port> in_ports;
   std::vector<Port> out_ports;
 
   // Map port attr -> link
   std::map<int, int> in_links;
   // Map port attr -> link
-  std::map<int, int> out_links;
+  std::map<int, std::set<int>> out_links;
 
   int internal_id;
 
@@ -110,11 +135,16 @@ public:
   }
 
   std::shared_ptr<Link> GetInLink(Graph &graph, int port) {
-    return graph.links[in_links[port]];
+    if (in_links.count(port) > 0) {
+      return graph.links[in_links[port]];
+    }
+    return nullptr;
   }
 
-  std::shared_ptr<Link> GetOutLink(Graph &graph, int port) {
-    return graph.links[out_links[port]];
+  void SetOutLinkBuffer(Graph &graph, int port, std::string buffer) {
+    for (auto link_id : out_links[port]) {
+      graph.links[link_id]->setBuffer(buffer);
+    }
   }
 
   int AddInput(std::string label, LinkType type) {
@@ -140,7 +170,9 @@ public:
     }
 
     ImNodes::BeginStaticAttribute(internal_id);
+    ImGui::PushID(id);
     DisplayInternal();
+    ImGui::PopID();
     ImNodes::EndStaticAttribute();
 
     for (auto port : in_ports) {
@@ -150,29 +182,20 @@ public:
     ImNodes::EndNode();
   }
 
-  virtual void ProcessInternal() = 0;
+  void Process(Graph &graph) {
+    if (!processed) {
+      processed = true;
+
+      for (auto pair : in_links) {
+        if (graph.links[pair.second] != nullptr) {
+          graph.nodes[graph.links[pair.second]->in_node]->Process(graph);
+        }
+      }
+
+      ProcessInternal(graph);
+    }
+  }
+
+  virtual void ProcessInternal(Graph &graph) = 0;
   virtual void DisplayInternal() = 0;
-};
-
-class Link : public ImNodesComponent {
-  std::variant<std::string, CryptoPP::Integer> data;
-
-public:
-  int in_node;
-  int in_attr;
-
-  int out_node;
-  int out_attr;
-
-  Link(int in_node, int in_attr, int out_node, int out_attr)
-      : in_node(in_node), in_attr(in_attr), out_node(out_node),
-        out_attr(out_attr), ImNodesComponent() {}
-
-  std::string &getBuffer() { return std::get<std::string>(data); }
-  void setBuffer(std::string buffer) { data = buffer; }
-
-  CryptoPP::Integer &getInteger() { return std::get<CryptoPP::Integer>(data); }
-  void setInteger(CryptoPP::Integer integer) { data = integer; }
-
-  void Display() { ImNodes::Link(id, in_attr, out_attr); }
 };

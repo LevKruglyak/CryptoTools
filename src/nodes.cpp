@@ -5,6 +5,10 @@
 #include <cfloat>
 #include <iostream>
 
+static int id = 0;
+
+int GenerateId() { return id++; }
+
 void Graph::AddNode(std::shared_ptr<Node> node) {
   nodes[node->id] = node;
   for (auto port : node->in_ports) {
@@ -31,10 +35,12 @@ void Graph::Connect(int start, int end) {
   auto end_node = nodes[end];
 
   auto link = std::make_shared<Link>(start_node->id, start, end_node->id, end);
-  links[link->id] = link;
 
-  start_node->out_links[start] = link->id;
-  end_node->in_links[end] = link->id;
+  if (end_node->in_links.count(end) == 0) {
+    end_node->in_links[end] = link->id;
+    start_node->out_links[start].insert(link->id);
+    links[link->id] = link;
+  }
 }
 
 void Graph::Deconnect(int id) {
@@ -43,9 +49,19 @@ void Graph::Deconnect(int id) {
   auto start_node = nodes[link->in_node];
   auto end_node = nodes[link->out_node];
 
-  start_node->out_links.erase(link->in_attr);
+  start_node->out_links[link->in_attr].erase(link->id);
   end_node->in_links.erase(link->out_attr);
   links.erase(link->id);
+}
+
+void Graph::Process() {
+  for (auto pair : nodes) {
+    pair.second->processed = false;
+  }
+
+  for (auto pair : nodes) {
+    pair.second->Process(*this);
+  }
 }
 
 class Editor {
@@ -74,6 +90,14 @@ public:
   void Run() {
     RunToolbar();
 
+    ImNodes::SetCurrentContext(ctx);
+    ImNodes::PushAttributeFlag(
+        ImNodesAttributeFlags_EnableLinkDetachWithDragClick);
+
+    ImNodesIO &io = ImNodes::GetIO();
+    io.LinkDetachWithModifierClick.Modifier = &ImGui::GetIO().KeyCtrl;
+    io.MultipleSelectModifier.Modifier = &ImGui::GetIO().KeyCtrl;
+
     ImNodesStyle &style = ImNodes::GetStyle();
     style.Flags |= ImNodesStyleFlags_GridLines;
     if (snapgrid) {
@@ -83,18 +107,12 @@ public:
       style.Flags &= ~ImNodesStyleFlags_GridSnapping;
     }
 
-    ImNodes::PushAttributeFlag(
-        ImNodesAttributeFlags_EnableLinkDetachWithDragClick);
-
-    ImNodesIO &io = ImNodes::GetIO();
-    io.LinkDetachWithModifierClick.Modifier = &ImGui::GetIO().KeyCtrl;
-    io.MultipleSelectModifier.Modifier = &ImGui::GetIO().KeyCtrl;
-
-    ImNodes::SetCurrentContext(ctx);
     ImNodes::BeginNodeEditor();
 
     for (auto pair : graph.nodes) {
-      pair.second->Display();
+      if (pair.first == pair.second->id) {
+        pair.second->Display();
+      }
     }
 
     for (auto pair : graph.links) {
@@ -123,6 +141,7 @@ public:
       }
     }
 
+    graph.Process();
     ImNodes::PopAttributeFlag();
   }
 
