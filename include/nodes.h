@@ -6,3 +6,5 @@
 
 void ShowHashNodesMenu(Graph &graph);
 void ShowIONodesMenu(Graph &graph);
+void ShowArithmeticNodesMenu(Graph &graph);
+void ShowConverterNodesMenu(Graph &graph);

@@ -5,6 +5,10 @@
 
 #include <string>
 
+namespace ImGui {
+void HexViewer(std::string &data);
+};
+
 class Input {
 public:
   Input(std::string label, int height = 8) : label(label), height(height) {}

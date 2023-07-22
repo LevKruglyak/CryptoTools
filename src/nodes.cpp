@@ -12,34 +12,40 @@ int GenerateId() { return id++; }
 void Graph::AddNode(std::shared_ptr<Node> node) {
   nodes[node->id] = node;
   for (auto port : node->in_ports) {
-    nodes[port.id] = node;
+    ports[port->id] = port;
   }
   for (auto port : node->out_ports) {
-    nodes[port.id] = node;
+    ports[port->id] = port;
   }
 }
 
 void Graph::RemoveNode(int id) {
   auto node = nodes[id];
   for (auto port : node->in_ports) {
-    nodes.erase(port.id);
+    ports.erase(port->id);
   }
   for (auto port : node->out_ports) {
-    nodes.erase(port.id);
+    ports.erase(port->id);
   }
   nodes.erase(node->id);
 }
 
 void Graph::Connect(int start, int end) {
-  auto start_node = nodes[start];
-  auto end_node = nodes[end];
+  auto start_port = ports[start];
+  auto end_port = ports[end];
 
-  auto link = std::make_shared<Link>(start_node->id, start, end_node->id, end);
+  if (start_port->type == end_port->type) {
+    auto start_node = nodes[start_port->parent_id];
+    auto end_node = nodes[end_port->parent_id];
 
-  if (end_node->in_links.count(end) == 0) {
-    end_node->in_links[end] = link->id;
-    start_node->out_links[start].insert(link->id);
-    links[link->id] = link;
+    auto link = std::make_shared<Link>(start_node->id, start, end_node->id, end,
+                                       start_port->type);
+
+    if (end_node->in_links.count(end) == 0) {
+      end_node->in_links[end] = link->id;
+      start_node->out_links[start].insert(link->id);
+      links[link->id] = link;
+    }
   }
 }
 
@@ -80,7 +86,28 @@ public:
       }
       if (ImGui::BeginMenu("Nodes")) {
         ShowIONodesMenu(graph);
+        ShowConverterNodesMenu(graph);
         ShowHashNodesMenu(graph);
+        ShowArithmeticNodesMenu(graph);
+        ImGui::EndMenu();
+      }
+
+      if (ImGui::BeginMenu("Edit")) {
+        if (ImGui::MenuItem("Delete Selected")) {
+          int nodes[ImNodes::NumSelectedNodes()];
+          int links[ImNodes::NumSelectedLinks()];
+
+          ImNodes::GetSelectedLinks(links);
+          ImNodes::GetSelectedNodes(nodes);
+
+          for (auto link : links) {
+            graph.Deconnect(link);
+          }
+
+          for (auto node : nodes) {
+            graph.RemoveNode(node);
+          }
+        }
         ImGui::EndMenu();
       }
       ImGui::EndMenuBar();
@@ -110,9 +137,7 @@ public:
     ImNodes::BeginNodeEditor();
 
     for (auto pair : graph.nodes) {
-      if (pair.first == pair.second->id) {
-        pair.second->Display();
-      }
+      pair.second->Display();
     }
 
     for (auto pair : graph.links) {

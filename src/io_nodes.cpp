@@ -1,9 +1,12 @@
 #include "graph.h"
 #include "imgui.h"
+#include "integer.h"
 #include "misc/cpp/imgui_stdlib.h"
 #include "nodes.h"
+#include "ui.h"
 #include "utils.h"
 #include <iostream>
+#include <sstream>
 
 class StringInputNode : public Node {
   std::string content = "";
@@ -38,7 +41,8 @@ public:
   void DisplayInternal() override {
     ImGui::SetNextItemWidth(width);
     ImGui::InputTextMultiline("##buffer", &content,
-                              ImVec2(width, ImGui::GetTextLineHeight() * 8));
+                              ImVec2(width, ImGui::GetTextLineHeight() * 8),
+                              ImGuiInputTextFlags_CharsHexadecimal);
     ImGui::Text("%lu bytes", content.size());
   }
 
@@ -58,9 +62,11 @@ public:
   }
 
   void DisplayInternal() override {
-    ImGui::InputTextMultiline("##buffer", &content,
-                              ImVec2(width, ImGui::GetTextLineHeight() * 8),
-                              ImGuiInputTextFlags_ReadOnly);
+    if (content.size() == 0) {
+      ImGui::TextUnformatted(content.c_str());
+    } else {
+      ImGui::TextUnformatted("No Data!");
+    }
   }
 
   void ProcessInternal(Graph &graph) override {
@@ -83,19 +89,69 @@ public:
     in = AddInput("in", LinkType::BUFFER);
   }
 
+  void DisplayInternal() override { ImGui::HexViewer(content); }
+
+  void ProcessInternal(Graph &graph) override {
+    std::shared_ptr<Link> in_link = GetInLink(graph, in);
+    if (in_link != nullptr) {
+      content = in_link->getBuffer();
+    } else {
+      content = "";
+    }
+  }
+};
+
+class IntegerDisplayNode : public Node {
+  CryptoPP::Integer content;
+  int in;
+
+public:
+  IntegerDisplayNode() : Node("Integer Display") {
+    width = 200.0f;
+    in = AddInput("in", LinkType::INTEGER);
+  }
+
   void DisplayInternal() override {
-    ImGui::InputTextMultiline("##buffer", &content,
-                              ImVec2(width, ImGui::GetTextLineHeight() * 8),
-                              ImGuiInputTextFlags_ReadOnly);
+    std::ostringstream stm;
+    stm << content;
+    std::string str = stm.str();
+
+    // Remove decimal place
+    str.erase(str.size() - 1);
+
+    ImGui::SetNextItemWidth(width);
+    ImGui::InputText("##integer_output", &str, ImGuiInputTextFlags_ReadOnly);
+    ImGui::Text("%d bits", content.BitCount());
   }
 
   void ProcessInternal(Graph &graph) override {
     std::shared_ptr<Link> in_link = GetInLink(graph, in);
     if (in_link != nullptr) {
-      content = utils::hexEncode(in_link->getBuffer());
+      content = in_link->getInteger();
     } else {
-      content = "";
+      content = CryptoPP::Integer::Zero();
     }
+  }
+};
+
+class IntegerInputNode : public Node {
+  std::string content;
+  int out;
+
+public:
+  IntegerInputNode() : Node("Integer Input") {
+    width = 200.0f;
+    out = AddOutput("out", LinkType::INTEGER);
+  }
+
+  void DisplayInternal() override {
+    ImGui::SetNextItemWidth(width);
+    ImGui::InputText("##integer_input", &content,
+                     ImGuiInputTextFlags_CharsDecimal);
+  }
+
+  void ProcessInternal(Graph &graph) override {
+    SetOutLinkInteger(graph, out, CryptoPP::Integer(content.c_str()));
   }
 };
 
@@ -134,12 +190,14 @@ void ShowIONodesMenu(Graph &graph) {
   if (ImGui::BeginMenu("Input")) {
     CreateButton<StringInputNode>(graph, "String Input");
     CreateButton<HexInputNode>(graph, "Hex Input");
+    CreateButton<IntegerInputNode>(graph, "Integer Input");
     ImGui::EndMenu();
   }
 
   if (ImGui::BeginMenu("Output")) {
     CreateButton<StringDisplayNode>(graph, "String Display");
     CreateButton<HexDisplayNode>(graph, "Hex Display");
+    CreateButton<IntegerDisplayNode>(graph, "Integer Display");
     ImGui::EndMenu();
   }
 
