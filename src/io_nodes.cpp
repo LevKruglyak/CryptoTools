@@ -47,7 +47,8 @@ public:
   }
 
   void ProcessInternal(Graph &graph) override {
-    SetOutLinkBuffer(graph, out, utils::hexDecode(content));
+    std::string decoded = utils::hexDecode(content);
+    SetOutLinkBuffer(graph, out, decoded);
   }
 };
 
@@ -62,20 +63,14 @@ public:
   }
 
   void DisplayInternal() override {
-    if (content.size() == 0) {
-      ImGui::TextUnformatted(content.c_str());
-    } else {
-      ImGui::TextUnformatted("No Data!");
-    }
+    ImGui::SetNextItemWidth(width);
+    ImGui::InputTextMultiline("##buffer", &content,
+                              ImVec2(width, ImGui::GetTextLineHeight() * 8),
+                              ImGuiInputTextFlags_ReadOnly);
   }
 
   void ProcessInternal(Graph &graph) override {
-    std::shared_ptr<Link> in_link = GetInLink(graph, in);
-    if (in_link != nullptr) {
-      content = in_link->getBuffer();
-    } else {
-      content = "";
-    }
+    content = GetInBuffer(graph, in);
   }
 };
 
@@ -92,12 +87,7 @@ public:
   void DisplayInternal() override { ImGui::HexViewer(content); }
 
   void ProcessInternal(Graph &graph) override {
-    std::shared_ptr<Link> in_link = GetInLink(graph, in);
-    if (in_link != nullptr) {
-      content = in_link->getBuffer();
-    } else {
-      content = "";
-    }
+    content = GetInBuffer(graph, in);
   }
 };
 
@@ -108,7 +98,7 @@ class IntegerDisplayNode : public Node {
 public:
   IntegerDisplayNode() : Node("Integer Display") {
     width = 200.0f;
-    in = AddInput("in", LinkType::INTEGER);
+    in = AddInput("in", LinkType::INTEGER, false);
   }
 
   void DisplayInternal() override {
@@ -125,12 +115,7 @@ public:
   }
 
   void ProcessInternal(Graph &graph) override {
-    std::shared_ptr<Link> in_link = GetInLink(graph, in);
-    if (in_link != nullptr) {
-      content = in_link->getInteger();
-    } else {
-      content = CryptoPP::Integer::Zero();
-    }
+    content = GetInInteger(graph, in);
   }
 };
 
@@ -151,7 +136,8 @@ public:
   }
 
   void ProcessInternal(Graph &graph) override {
-    SetOutLinkInteger(graph, out, CryptoPP::Integer(content.c_str()));
+    CryptoPP::Integer integer = CryptoPP::Integer(content.c_str());
+    SetOutLinkInteger(graph, out, integer);
   }
 };
 
@@ -172,17 +158,8 @@ public:
   void DisplayInternal() override {}
 
   void ProcessInternal(Graph &graph) override {
-    std::shared_ptr<Link> in1_link = GetInLink(graph, in1);
-    std::shared_ptr<Link> in2_link = GetInLink(graph, in2);
-
-    if (in1_link != nullptr && in2_link != nullptr) {
-      std::string in1_buf = in1_link->getBuffer();
-      std::string in2_buf = in2_link->getBuffer();
-
-      SetOutLinkBuffer(graph, out, in1_buf + in2_buf);
-    } else {
-      SetOutLinkBuffer(graph, out, "");
-    }
+    std::string concat = GetInBuffer(graph, in1) + GetInBuffer(graph, in2);
+    SetOutLinkBuffer(graph, out, concat);
   }
 };
 

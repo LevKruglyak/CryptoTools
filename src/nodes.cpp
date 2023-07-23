@@ -11,22 +11,21 @@ int GenerateId() { return id++; }
 
 void Graph::AddNode(std::shared_ptr<Node> node) {
   nodes[node->id] = node;
-  for (auto port : node->in_ports) {
-    ports[port->id] = port;
+  for (auto port_pair : node->in) {
+    ports[port_pair.first] = port_pair.second.first;
   }
-  for (auto port : node->out_ports) {
-    ports[port->id] = port;
+  for (auto port_pair : node->out) {
+    ports[port_pair.first] = port_pair.second.first;
   }
 }
 
 void Graph::RemoveNode(int id) {
   auto node = nodes[id];
-
-  for (auto port : node->in_ports) {
-    ports.erase(port->id);
+  for (auto port_pair : node->in) {
+    ports.erase(port_pair.first);
   }
-  for (auto port : node->out_ports) {
-    ports.erase(port->id);
+  for (auto port_pair : node->out) {
+    ports.erase(port_pair.first);
   }
   nodes.erase(node->id);
 }
@@ -42,9 +41,9 @@ void Graph::Connect(int start, int end) {
     auto link = std::make_shared<Link>(start_node->id, start, end_node->id, end,
                                        start_port->type);
 
-    if (end_node->in_links.count(end) == 0) {
-      end_node->in_links[end] = link->id;
-      start_node->out_links[start].insert(link->id);
+    if (end_node->in[end].second == nullptr) {
+      end_node->in[end].second = link;
+      start_node->out[start].second.insert(link);
       links[link->id] = link;
     }
   }
@@ -57,11 +56,11 @@ void Graph::Deconnect(int id) {
   auto end_node = nodes[link->out_node];
 
   if (start_node != nullptr) {
-    start_node->out_links[link->in_attr].erase(link->id);
+    start_node->out[link->in_attr].second.erase(link);
   }
 
   if (end_node != nullptr) {
-    end_node->in_links.erase(link->out_attr);
+    end_node->in[link->out_attr].second = nullptr;
   }
 
   links.erase(link->id);

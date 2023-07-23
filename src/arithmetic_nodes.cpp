@@ -17,13 +17,9 @@ public:
   void DisplayInternal() override {}
 
   void ProcessInternal(Graph &graph) override {
-    std::shared_ptr<Link> in1_link = GetInLink(graph, in1);
-    std::shared_ptr<Link> in2_link = GetInLink(graph, in2);
-    if (in1_link != nullptr && in2_link != nullptr) {
-      CryptoPP::Integer first = in1_link->getInteger();
-      CryptoPP::Integer second = in2_link->getInteger();
-      SetOutLinkInteger(graph, out, first + second);
-    }
+    CryptoPP::Integer result =
+        GetInInteger(graph, in1) + GetInInteger(graph, in2);
+    SetOutLinkInteger(graph, out, result);
   }
 };
 
@@ -42,13 +38,9 @@ public:
   void DisplayInternal() override {}
 
   void ProcessInternal(Graph &graph) override {
-    std::shared_ptr<Link> in1_link = GetInLink(graph, in1);
-    std::shared_ptr<Link> in2_link = GetInLink(graph, in2);
-    if (in1_link != nullptr && in2_link != nullptr) {
-      CryptoPP::Integer first = in1_link->getInteger();
-      CryptoPP::Integer second = in2_link->getInteger();
-      SetOutLinkInteger(graph, out, first - second);
-    }
+    CryptoPP::Integer result =
+        GetInInteger(graph, in1) - GetInInteger(graph, in2);
+    SetOutLinkInteger(graph, out, result);
   }
 };
 
@@ -67,13 +59,9 @@ public:
   void DisplayInternal() override {}
 
   void ProcessInternal(Graph &graph) override {
-    std::shared_ptr<Link> in1_link = GetInLink(graph, in1);
-    std::shared_ptr<Link> in2_link = GetInLink(graph, in2);
-    if (in1_link != nullptr && in2_link != nullptr) {
-      CryptoPP::Integer first = in1_link->getInteger();
-      CryptoPP::Integer second = in2_link->getInteger();
-      SetOutLinkInteger(graph, out, first * second);
-    }
+    CryptoPP::Integer result =
+        GetInInteger(graph, in1) * GetInInteger(graph, in2);
+    SetOutLinkInteger(graph, out, result);
   }
 };
 
@@ -92,13 +80,9 @@ public:
   void DisplayInternal() override {}
 
   void ProcessInternal(Graph &graph) override {
-    std::shared_ptr<Link> in1_link = GetInLink(graph, in1);
-    std::shared_ptr<Link> in2_link = GetInLink(graph, in2);
-    if (in1_link != nullptr && in2_link != nullptr) {
-      CryptoPP::Integer first = in1_link->getInteger();
-      CryptoPP::Integer second = in2_link->getInteger();
-      SetOutLinkInteger(graph, out, first / second);
-    }
+    CryptoPP::Integer result =
+        GetInInteger(graph, in1) / GetInInteger(graph, in2);
+    SetOutLinkInteger(graph, out, result);
   }
 };
 
@@ -117,13 +101,9 @@ public:
   void DisplayInternal() override {}
 
   void ProcessInternal(Graph &graph) override {
-    std::shared_ptr<Link> in1_link = GetInLink(graph, in1);
-    std::shared_ptr<Link> in2_link = GetInLink(graph, in2);
-    if (in1_link != nullptr && in2_link != nullptr) {
-      CryptoPP::Integer first = in1_link->getInteger();
-      CryptoPP::Integer second = in2_link->getInteger();
-      SetOutLinkInteger(graph, out, first % second);
-    }
+    CryptoPP::Integer result =
+        GetInInteger(graph, in1) % GetInInteger(graph, in2);
+    SetOutLinkInteger(graph, out, result);
   }
 };
 
@@ -144,16 +124,10 @@ public:
   void DisplayInternal() override {}
 
   void ProcessInternal(Graph &graph) override {
-    std::shared_ptr<Link> in1_link = GetInLink(graph, in1);
-    std::shared_ptr<Link> in2_link = GetInLink(graph, in2);
-    std::shared_ptr<Link> in3_link = GetInLink(graph, in3);
-    if (in1_link != nullptr && in2_link != nullptr && in3_link != nullptr) {
-      CryptoPP::Integer x = in1_link->getInteger();
-      CryptoPP::Integer exp = in2_link->getInteger();
-      CryptoPP::Integer mod = in3_link->getInteger();
-      SetOutLinkInteger(graph, out,
-                        CryptoPP::ModularExponentiation(x, exp, mod));
-    }
+    CryptoPP::Integer result = CryptoPP::ModularExponentiation(
+        GetInInteger(graph, in1), GetInInteger(graph, in2),
+        GetInInteger(graph, in3));
+    SetOutLinkInteger(graph, out, result);
   }
 };
 
@@ -172,14 +146,9 @@ public:
   void DisplayInternal() override {}
 
   void ProcessInternal(Graph &graph) override {
-    std::shared_ptr<Link> in1_link = GetInLink(graph, in1);
-    std::shared_ptr<Link> in2_link = GetInLink(graph, in2);
-    if (in1_link != nullptr && in2_link != nullptr) {
-      CryptoPP::Integer a = in1_link->getInteger();
-      CryptoPP::Integer b = in2_link->getInteger();
-      SetOutLinkInteger(graph, out,
-                        CryptoPP::EuclideanMultiplicativeInverse(a, b));
-    }
+    CryptoPP::Integer result = CryptoPP::EuclideanMultiplicativeInverse(
+        GetInInteger(graph, in1), GetInInteger(graph, in2));
+    SetOutLinkInteger(graph, out, result);
   }
 };
 
@@ -198,13 +167,9 @@ public:
   void DisplayInternal() override {}
 
   void ProcessInternal(Graph &graph) override {
-    std::shared_ptr<Link> in1_link = GetInLink(graph, in1);
-    std::shared_ptr<Link> in2_link = GetInLink(graph, in2);
-    if (in1_link != nullptr && in2_link != nullptr) {
-      CryptoPP::Integer a = in1_link->getInteger();
-      CryptoPP::Integer b = in2_link->getInteger();
-      SetOutLinkInteger(graph, out, CryptoPP::GCD(a, b));
-    }
+    CryptoPP::Integer result =
+        CryptoPP::GCD(GetInInteger(graph, in1), GetInInteger(graph, in2));
+    SetOutLinkInteger(graph, out, result);
   }
 };
 
@@ -223,13 +188,9 @@ public:
   void DisplayInternal() override {}
 
   void ProcessInternal(Graph &graph) override {
-    std::shared_ptr<Link> in1_link = GetInLink(graph, in1);
-    std::shared_ptr<Link> in2_link = GetInLink(graph, in2);
-    if (in1_link != nullptr && in2_link != nullptr) {
-      CryptoPP::Integer a = in1_link->getInteger();
-      CryptoPP::Integer b = in2_link->getInteger();
-      SetOutLinkInteger(graph, out, CryptoPP::LCM(a, b));
-    }
+    CryptoPP::Integer result =
+        CryptoPP::LCM(GetInInteger(graph, in1), GetInInteger(graph, in2));
+    SetOutLinkInteger(graph, out, result);
   }
 };
 

@@ -4,6 +4,7 @@
 #include "imgui.h"
 #include "imnodes.h"
 #include "integer.h"
+#include "misc/cpp/imgui_stdlib.h"
 #include <cryptopp/nbtheory.h>
 #include <exception>
 #include <map>
@@ -54,24 +55,39 @@ inline ImNodesPinShape LinkTypeToImNodesShape(LinkType type) {
 }
 
 class Port : public ImNodesComponent {
+
 public:
+  std::string input;
+  CryptoPP::Integer input_integer;
   ImNodesPinShape shape;
   LinkType type;
   std::string label;
   float width;
+  bool show_input;
   int parent_id;
   bool in;
 
-  Port(LinkType type, bool in, std::string label, int parent_id, float width)
+  Port(LinkType type, bool in, std::string label, int parent_id, float width,
+       bool show_input = true)
       : in(in), label(label), parent_id(parent_id), width(width), type(type),
-        ImNodesComponent() {
+        show_input(show_input), ImNodesComponent() {
     shape = LinkTypeToImNodesShape(type);
   }
 
-  void Display() {
+  void Display(bool connected) {
     if (in) {
       ImNodes::BeginInputAttribute(id, shape);
-      ImGui::TextUnformatted(label.c_str());
+      if (show_input && type == INTEGER && !connected) {
+        ImGui::PushID(id);
+        ImGui::SetNextItemWidth(width - ImGui::CalcTextSize(label.c_str()).x);
+        if (ImGui::InputText(label.c_str(), &input,
+                             ImGuiInputTextFlags_CharsDecimal)) {
+          input_integer = CryptoPP::Integer(input.c_str());
+        }
+        ImGui::PopID();
+      } else {
+        ImGui::TextUnformatted(label.c_str());
+      }
       ImNodes::EndInputAttribute();
     } else {
       ImNodes::BeginOutputAttribute(id, shape);
@@ -82,6 +98,8 @@ public:
       ImNodes::EndOutputAttribute();
     }
   }
+
+  const CryptoPP::Integer &GetManualInputInteger() { return input_integer; }
 };
 
 template <typename NODE> void CreateButton(Graph &graph, std::string label) {
@@ -94,6 +112,8 @@ template <typename NODE> void CreateButton(Graph &graph, std::string label) {
   }
 }
 
+static std::string empty_buffer = "";
+
 class Link : public ImNodesComponent {
   std::variant<std::string, CryptoPP::Integer> data;
 
@@ -105,10 +125,10 @@ public:
   int out_attr;
 
   std::string &getBuffer() { return std::get<std::string>(data); }
-  void setBuffer(std::string buffer) { data = buffer; }
+  void setBuffer(const std::string &buffer) { data = buffer; }
 
   CryptoPP::Integer &getInteger() { return std::get<CryptoPP::Integer>(data); }
-  void setInteger(CryptoPP::Integer integer) { data = integer; }
+  void setInteger(const CryptoPP::Integer &integer) { data = integer; }
 
   void Display() { ImNodes::Link(id, in_attr, out_attr); }
 
@@ -117,7 +137,7 @@ public:
         out_attr(out_attr), ImNodesComponent() {
     switch (type) {
     case BUFFER:
-      setBuffer("");
+      setBuffer(empty_buffer);
       break;
     case INTEGER:
       setInteger(CryptoPP::Integer::Zero());
@@ -136,13 +156,10 @@ public:
   bool error = false;
   std::string error_message;
 
-  std::vector<std::shared_ptr<Port>> in_ports;
-  std::vector<std::shared_ptr<Port>> out_ports;
-
-  // Map port attr -> link
-  std::map<int, int> in_links;
-  // Map port attr -> link
-  std::map<int, std::set<int>> out_links;
+  std::map<int, std::pair<std::shared_ptr<Port>, std::shared_ptr<Link>>> in;
+  std::map<int,
+           std::pair<std::shared_ptr<Port>, std::set<std::shared_ptr<Link>>>>
+      out;
 
   int internal_id;
 
@@ -151,34 +168,46 @@ public:
     internal_id = GenerateId();
   }
 
-  std::shared_ptr<Link> GetInLink(Graph &graph, int port) {
-    if (in_links.count(port) > 0) {
-      return graph.links[in_links[port]];
+  const CryptoPP::Integer &GetInInteger(Graph &graph, int port) {
+    if (in[port].second != nullptr) {
+      return in[port].second->getInteger();
+    } else {
+      return in[port].first->GetManualInputInteger();
     }
-    return nullptr;
+
+    return CryptoPP::Integer::Zero();
   }
 
-  void SetOutLinkBuffer(Graph &graph, int port, std::string buffer) {
-    for (auto link_id : out_links[port]) {
-      graph.links[link_id]->setBuffer(buffer);
+  const std::string &GetInBuffer(Graph &graph, int port) {
+    if (in[port].second != nullptr) {
+      return in[port].second->getBuffer();
+    }
+
+    return empty_buffer;
+  }
+
+  void SetOutLinkBuffer(Graph &graph, int port, std::string &buffer) {
+    for (auto out_link : out[port].second) {
+      graph.links[out_link->id]->setBuffer(buffer);
     }
   }
 
-  void SetOutLinkInteger(Graph &graph, int port, CryptoPP::Integer integer) {
-    for (auto link_id : out_links[port]) {
-      graph.links[link_id]->setInteger(integer);
+  void SetOutLinkInteger(Graph &graph, int port, CryptoPP::Integer &integer) {
+    for (auto out_link : out[port].second) {
+      graph.links[out_link->id]->setInteger(integer);
     }
   }
 
-  int AddInput(std::string label, LinkType type) {
-    Port port(type, true, label, id, width);
-    in_ports.push_back(std::make_shared<Port>(port));
+  int AddInput(std::string label, LinkType type, bool show_input = true) {
+    Port port(type, true, label, id, width, show_input);
+    in[port.id] = std::make_pair(std::make_shared<Port>(port), nullptr);
     return port.id;
   }
 
   int AddOutput(std::string label, LinkType type) {
     Port port(type, false, label, id, width);
-    out_ports.push_back(std::make_shared<Port>(port));
+    out[port.id] = std::make_pair(std::make_shared<Port>(port),
+                                  std::set<std::shared_ptr<Link>>());
     return port.id;
   }
   void Display() {
@@ -188,8 +217,8 @@ public:
     ImGui::TextUnformatted(label.c_str());
     ImNodes::EndNodeTitleBar();
 
-    for (auto port : out_ports) {
-      port->Display();
+    for (auto port_link : out) {
+      port_link.second.first->Display(false);
     }
 
     ImNodes::BeginStaticAttribute(internal_id);
@@ -204,8 +233,8 @@ public:
     ImGui::PopID();
     ImNodes::EndStaticAttribute();
 
-    for (auto port : in_ports) {
-      port->Display();
+    for (auto port_link : in) {
+      port_link.second.first->Display(port_link.second.second != nullptr);
     }
 
     ImNodes::EndNode();
@@ -215,9 +244,10 @@ public:
     if (!processed) {
       processed = true;
 
-      for (auto pair : in_links) {
-        if (graph.links[pair.second] != nullptr) {
-          graph.nodes[graph.links[pair.second]->in_node]->Process(graph);
+      for (auto pair : in) {
+        auto link = pair.second.second;
+        if (link != nullptr) {
+          graph.nodes[link->in_node]->Process(graph);
         }
       }
 

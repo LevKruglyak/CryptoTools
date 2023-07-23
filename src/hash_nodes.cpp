@@ -22,16 +22,12 @@ public:
   void DisplayInternal() override {}
 
   void ProcessInternal(Graph &graph) override {
-    std::shared_ptr<Link> in_link = GetInLink(graph, in);
-
-    if (in_link != nullptr) {
-      auto content = in_link->getBuffer();
-      CryptoPP::byte digest[HASH_ALG::DIGESTSIZE];
-      HASH_ALG().CalculateDigest(digest, (CryptoPP::byte *)content.data(),
-                                 content.length());
-      SetOutLinkBuffer(graph, out,
-                       std::string((char *)digest, HASH_ALG::DIGESTSIZE));
-    }
+    auto content = GetInBuffer(graph, in);
+    CryptoPP::byte digest[HASH_ALG::DIGESTSIZE];
+    HASH_ALG().CalculateDigest(digest, (CryptoPP::byte *)content.data(),
+                               content.length());
+    std::string out_buf = std::string((char *)digest, HASH_ALG::DIGESTSIZE);
+    SetOutLinkBuffer(graph, out, out_buf);
   }
 };
 
