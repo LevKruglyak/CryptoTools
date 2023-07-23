@@ -151,7 +151,23 @@ public:
       style.Flags &= ~ImNodesStyleFlags_GridSnapping;
     }
 
+    auto window_pad = ImGui::GetStyle().WindowPadding;
+    auto frame_pad = ImGui::GetStyle().WindowPadding;
     ImNodes::BeginNodeEditor();
+
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, window_pad);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, frame_pad);
+    if (ImGui::BeginPopupContextWindow()) {
+      if (ImGui::MenuItem("Delete")) {
+        DeleteSelected();
+      }
+      if (ImGui::BeginMenu("Add")) {
+        RunNodes();
+        ImGui::EndMenu();
+      }
+      ImGui::EndPopup();
+    }
+    ImGui::PopStyleVar(2);
 
     for (auto pair : graph.nodes) {
       pair.second->Display();
@@ -163,17 +179,6 @@ public:
 
     if (minimap) {
       ImNodes::MiniMap(0.2f, ImNodesMiniMapLocation_BottomRight);
-    }
-
-    if (ImGui::BeginPopupContextWindow()) {
-      if (ImGui::MenuItem("Delete")) {
-        DeleteSelected();
-      }
-      if (ImGui::BeginMenu("Add")) {
-        RunNodes();
-        ImGui::EndMenu();
-      }
-      ImGui::EndPopup();
     }
 
     ImNodes::EndNodeEditor();
