@@ -19,7 +19,7 @@ public:
     out = AddOutput("out", LinkType::BUFFER);
   }
 
-  void DisplayInternal() override {}
+  bool DisplayInternal() override { return false; }
 
   void ProcessInternal(Graph &graph) override {
     auto content = GetInBuffer(graph, in);

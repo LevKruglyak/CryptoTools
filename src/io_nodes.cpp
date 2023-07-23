@@ -17,11 +17,12 @@ public:
     out = AddOutput("out", LinkType::BUFFER);
   }
 
-  void DisplayInternal() override {
+  bool DisplayInternal() override {
     ImGui::SetNextItemWidth(width);
-    ImGui::InputTextMultiline("##buffer", &content,
-                              ImVec2(width, ImGui::GetTextLineHeight() * 8));
+    bool modified = ImGui::InputTextMultiline(
+        "##buffer", &content, ImVec2(width, ImGui::GetTextLineHeight() * 8));
     ImGui::Text("%lu bytes", content.size());
+    return modified;
   }
 
   void ProcessInternal(Graph &graph) override {
@@ -31,6 +32,8 @@ public:
 
 class HexInputNode : public Node {
   std::string content = "";
+  std::string decoded = "";
+  size_t size = 0;
   int out;
 
 public:
@@ -38,16 +41,17 @@ public:
     out = AddOutput("out", LinkType::BUFFER);
   }
 
-  void DisplayInternal() override {
+  bool DisplayInternal() override {
     ImGui::SetNextItemWidth(width);
-    ImGui::InputTextMultiline("##buffer", &content,
-                              ImVec2(width, ImGui::GetTextLineHeight() * 8),
-                              ImGuiInputTextFlags_CharsHexadecimal);
-    ImGui::Text("%lu bytes", content.size());
+    bool modified = ImGui::InputTextMultiline(
+        "##buffer", &content, ImVec2(width, ImGui::GetTextLineHeight() * 8),
+        ImGuiInputTextFlags_CharsHexadecimal);
+    ImGui::Text("%lu bytes", decoded.size());
+    return modified;
   }
 
   void ProcessInternal(Graph &graph) override {
-    std::string decoded = utils::hexDecode(content);
+    decoded = utils::hexDecode(content);
     SetOutLinkBuffer(graph, out, decoded);
   }
 };
@@ -62,11 +66,11 @@ public:
     in = AddInput("in", LinkType::BUFFER);
   }
 
-  void DisplayInternal() override {
+  bool DisplayInternal() override {
     ImGui::SetNextItemWidth(width);
-    ImGui::InputTextMultiline("##buffer", &content,
-                              ImVec2(width, ImGui::GetTextLineHeight() * 8),
-                              ImGuiInputTextFlags_ReadOnly);
+    return ImGui::InputTextMultiline(
+        "##buffer", &content, ImVec2(width, ImGui::GetTextLineHeight() * 8),
+        ImGuiInputTextFlags_ReadOnly);
   }
 
   void ProcessInternal(Graph &graph) override {
@@ -84,7 +88,10 @@ public:
     in = AddInput("in", LinkType::BUFFER);
   }
 
-  void DisplayInternal() override { ImGui::HexViewer(content); }
+  bool DisplayInternal() override {
+    ImGui::HexViewer(content);
+    return false;
+  }
 
   void ProcessInternal(Graph &graph) override {
     content = GetInBuffer(graph, in);
@@ -101,7 +108,7 @@ public:
     in = AddInput("in", LinkType::INTEGER, false);
   }
 
-  void DisplayInternal() override {
+  bool DisplayInternal() override {
     std::ostringstream stm;
     stm << content;
     std::string str = stm.str();
@@ -110,8 +117,10 @@ public:
     str.erase(str.size() - 1);
 
     ImGui::SetNextItemWidth(width);
-    ImGui::InputText("##integer_output", &str, ImGuiInputTextFlags_ReadOnly);
+    bool modified = ImGui::InputText("##integer_output", &str,
+                                     ImGuiInputTextFlags_ReadOnly);
     ImGui::Text("%d bits", content.BitCount());
+    return modified;
   }
 
   void ProcessInternal(Graph &graph) override {
@@ -129,10 +138,10 @@ public:
     out = AddOutput("out", LinkType::INTEGER);
   }
 
-  void DisplayInternal() override {
+  bool DisplayInternal() override {
     ImGui::SetNextItemWidth(width);
-    ImGui::InputText("##integer_input", &content,
-                     ImGuiInputTextFlags_CharsDecimal);
+    return ImGui::InputText("##integer_input", &content,
+                            ImGuiInputTextFlags_CharsDecimal);
   }
 
   void ProcessInternal(Graph &graph) override {
@@ -155,7 +164,7 @@ public:
     out = AddOutput("out", LinkType::BUFFER);
   }
 
-  void DisplayInternal() override {}
+  bool DisplayInternal() override { return false; }
 
   void ProcessInternal(Graph &graph) override {
     std::string concat = GetInBuffer(graph, in1) + GetInBuffer(graph, in2);
@@ -169,7 +178,7 @@ class CommentNode : public Node {
 public:
   CommentNode() : Node("Comment") {}
 
-  void DisplayInternal() override {
+  bool DisplayInternal() override {
     ImGui::TextUnformatted(comment.c_str());
 
     if (ImGui::Button("Edit")) {
@@ -184,6 +193,8 @@ public:
       }
       ImGui::EndPopup();
     }
+
+    return false;
   }
 
   void ProcessInternal(Graph &graph) override {}

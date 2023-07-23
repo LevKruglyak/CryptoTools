@@ -21,13 +21,15 @@ void Graph::AddNode(std::shared_ptr<Node> node) {
 
 void Graph::RemoveNode(int id) {
   auto node = nodes[id];
-  for (auto port_pair : node->in) {
-    ports.erase(port_pair.first);
+  if (node != nullptr) {
+    for (auto port_pair : node->in) {
+      ports.erase(port_pair.first);
+    }
+    for (auto port_pair : node->out) {
+      ports.erase(port_pair.first);
+    }
+    nodes.erase(node->id);
   }
-  for (auto port_pair : node->out) {
-    ports.erase(port_pair.first);
-  }
-  nodes.erase(node->id);
 }
 
 void Graph::Connect(int start, int end) {
@@ -52,18 +54,20 @@ void Graph::Connect(int start, int end) {
 void Graph::Deconnect(int id) {
   auto link = links[id];
 
-  auto start_node = nodes[link->in_node];
-  auto end_node = nodes[link->out_node];
+  if (link != nullptr) {
+    auto start_node = nodes[link->in_node];
+    auto end_node = nodes[link->out_node];
 
-  if (start_node != nullptr) {
-    start_node->out[link->in_attr].second.erase(link);
+    if (start_node != nullptr) {
+      start_node->out[link->in_attr].second.erase(link);
+    }
+
+    if (end_node != nullptr) {
+      end_node->in[link->out_attr].second = nullptr;
+    }
+
+    links.erase(link->id);
   }
-
-  if (end_node != nullptr) {
-    end_node->in[link->out_attr].second = nullptr;
-  }
-
-  links.erase(link->id);
 }
 
 void Graph::Process() {
@@ -168,8 +172,9 @@ public:
     }
     ImGui::PopStyleVar(2);
 
+    bool modified = false;
     for (auto pair : graph.nodes) {
-      pair.second->Display();
+      modified |= pair.second->Display();
     }
 
     for (auto pair : graph.links) {
@@ -188,6 +193,7 @@ public:
 
       if (ImNodes::IsLinkCreated(&start, &end)) {
         graph.Connect(start, end);
+        modified = true;
       }
     }
 
@@ -196,10 +202,13 @@ public:
 
       if (ImNodes::IsLinkDestroyed(&id)) {
         graph.Deconnect(id);
+        modified = true;
       }
     }
 
-    graph.Process();
+    if (modified) {
+      graph.Process();
+    }
     ImNodes::PopAttributeFlag();
   }
 

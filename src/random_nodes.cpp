@@ -16,7 +16,7 @@ public:
     out = AddOutput("out", LinkType::BUFFER);
   }
 
-  void DisplayInternal() override {
+  bool DisplayInternal() override {
     ImGui::SetNextItemWidth(width - ImGui::CalcTextSize("bytes").x);
     ImGui::InputInt("bytes", &num_bytes);
 
@@ -32,7 +32,10 @@ public:
     if (ImGui::Button("Regenerate")) {
       bytes.resize(num_bytes);
       prng.GenerateBlock((CryptoPP::byte *)bytes.data(), num_bytes);
+      return true;
     }
+
+    return false;
   }
 
   void ProcessInternal(Graph &graph) override {
@@ -52,7 +55,7 @@ public:
     out = AddOutput("out", LinkType::INTEGER);
   }
 
-  void DisplayInternal() override {
+  bool DisplayInternal() override {
     ImGui::SetNextItemWidth(width - ImGui::CalcTextSize("bits").x);
     ImGui::InputInt("bits", &num_bits);
 
@@ -70,7 +73,10 @@ public:
           "BitLength", num_bits)("RandomNumberType", CryptoPP::Integer::PRIME);
 
       x.GenerateRandom(prng, params);
+      return true;
     }
+
+    return false;
   }
 
   void ProcessInternal(Graph &graph) override {

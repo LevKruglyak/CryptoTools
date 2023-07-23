@@ -210,7 +210,8 @@ public:
                                   std::set<std::shared_ptr<Link>>());
     return port.id;
   }
-  void Display() {
+
+  bool Display() {
     ImNodes::BeginNode(id);
 
     ImNodes::BeginNodeTitleBar();
@@ -223,7 +224,7 @@ public:
 
     ImNodes::BeginStaticAttribute(internal_id);
     ImGui::PushID(id);
-    DisplayInternal();
+    bool modified = DisplayInternal();
 
     if (error) {
       ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + width);
@@ -238,6 +239,7 @@ public:
     }
 
     ImNodes::EndNode();
+    return modified;
   }
 
   void Process(Graph &graph) {
@@ -266,5 +268,5 @@ public:
   }
 
   virtual void ProcessInternal(Graph &graph) = 0;
-  virtual void DisplayInternal() = 0;
+  virtual bool DisplayInternal() = 0;
 };

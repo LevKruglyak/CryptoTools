@@ -14,7 +14,7 @@ public:
     out = AddOutput("out", LinkType::INTEGER);
   }
 
-  void DisplayInternal() override {}
+  bool DisplayInternal() override { return false; }
 
   void ProcessInternal(Graph &graph) override {
     CryptoPP::Integer result =
@@ -35,7 +35,7 @@ public:
     out = AddOutput("out", LinkType::INTEGER);
   }
 
-  void DisplayInternal() override {}
+  bool DisplayInternal() override { return false; }
 
   void ProcessInternal(Graph &graph) override {
     CryptoPP::Integer result =
@@ -56,7 +56,7 @@ public:
     out = AddOutput("out", LinkType::INTEGER);
   }
 
-  void DisplayInternal() override {}
+  bool DisplayInternal() override { return false; }
 
   void ProcessInternal(Graph &graph) override {
     CryptoPP::Integer result =
@@ -77,7 +77,7 @@ public:
     out = AddOutput("out", LinkType::INTEGER);
   }
 
-  void DisplayInternal() override {}
+  bool DisplayInternal() override { return false; }
 
   void ProcessInternal(Graph &graph) override {
     CryptoPP::Integer result =
@@ -98,7 +98,7 @@ public:
     out = AddOutput("out", LinkType::INTEGER);
   }
 
-  void DisplayInternal() override {}
+  bool DisplayInternal() override { return false; }
 
   void ProcessInternal(Graph &graph) override {
     CryptoPP::Integer result =
@@ -121,7 +121,7 @@ public:
     out = AddOutput("out", LinkType::INTEGER);
   }
 
-  void DisplayInternal() override {}
+  bool DisplayInternal() override { return false; }
 
   void ProcessInternal(Graph &graph) override {
     CryptoPP::Integer result = CryptoPP::ModularExponentiation(
@@ -143,7 +143,7 @@ public:
     out = AddOutput("out", LinkType::INTEGER);
   }
 
-  void DisplayInternal() override {}
+  bool DisplayInternal() override { return false; }
 
   void ProcessInternal(Graph &graph) override {
     CryptoPP::Integer result = CryptoPP::EuclideanMultiplicativeInverse(
@@ -164,7 +164,7 @@ public:
     out = AddOutput("out", LinkType::INTEGER);
   }
 
-  void DisplayInternal() override {}
+  bool DisplayInternal() override { return false; }
 
   void ProcessInternal(Graph &graph) override {
     CryptoPP::Integer result =
@@ -185,7 +185,7 @@ public:
     out = AddOutput("out", LinkType::INTEGER);
   }
 
-  void DisplayInternal() override {}
+  bool DisplayInternal() override { return false; }
 
   void ProcessInternal(Graph &graph) override {
     CryptoPP::Integer result =

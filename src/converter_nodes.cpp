@@ -12,7 +12,7 @@ public:
     out = AddOutput("out", LinkType::BUFFER);
   }
 
-  void DisplayInternal() override {}
+  bool DisplayInternal() override { return false; }
 
   void ProcessInternal(Graph &graph) override {
     CryptoPP::Integer integer = GetInInteger(graph, in);
@@ -36,7 +36,7 @@ public:
     out = AddOutput("out", LinkType::INTEGER);
   }
 
-  void DisplayInternal() override {}
+  bool DisplayInternal() override { return false; }
 
   void ProcessInternal(Graph &graph) override {
     std::string data = GetInBuffer(graph, in);
