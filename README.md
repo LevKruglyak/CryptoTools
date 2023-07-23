@@ -1,5 +1,5 @@
 # CryptoTools
 
-Node-editor utility for debugging/developing cryptographic applications.
+Node-editor utility for debugging/developing cryptographic applications. For instance, here is a first principles implementation of RSA encryption/decryption in CryptoTools which can be inspected at any stage for debugging purposes:
 
-<img width="1792" alt="Screenshot 2023-07-22 at 6 51 28 PM" src="https://github.com/LevKruglyak/CryptoTools/assets/13054020/d919ce48-8754-4180-90a7-63af23c59a7b">
+<img width="1792" alt="Screenshot 2023-07-24 at 12 18 59 AM" src="https://github.com/LevKruglyak/CryptoTools/assets/13054020/3c761a01-a9cc-4517-a0ac-087058e4f013">
