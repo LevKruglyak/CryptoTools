@@ -21,6 +21,7 @@ void Graph::AddNode(std::shared_ptr<Node> node) {
 
 void Graph::RemoveNode(int id) {
   auto node = nodes[id];
+
   for (auto port : node->in_ports) {
     ports.erase(port->id);
   }
@@ -55,8 +56,14 @@ void Graph::Deconnect(int id) {
   auto start_node = nodes[link->in_node];
   auto end_node = nodes[link->out_node];
 
-  start_node->out_links[link->in_attr].erase(link->id);
-  end_node->in_links.erase(link->out_attr);
+  if (start_node != nullptr) {
+    start_node->out_links[link->in_attr].erase(link->id);
+  }
+
+  if (end_node != nullptr) {
+    end_node->in_links.erase(link->out_attr);
+  }
+
   links.erase(link->id);
 }
 
@@ -77,6 +84,31 @@ class Editor {
   bool snapgrid = true;
 
 public:
+  void RunNodes() {
+    ShowIONodesMenu(graph);
+    ShowConverterNodesMenu(graph);
+    ShowHashNodesMenu(graph);
+    ShowArithmeticNodesMenu(graph);
+    ShowRandomNodesMenu(graph);
+  }
+
+  void DeleteSelected() {
+    ImNodes::SetCurrentContext(ctx);
+    int nodes[ImNodes::NumSelectedNodes()];
+    int links[ImNodes::NumSelectedLinks()];
+
+    ImNodes::GetSelectedLinks(links);
+    ImNodes::GetSelectedNodes(nodes);
+
+    for (auto link : links) {
+      graph.Deconnect(link);
+    }
+
+    for (auto node : nodes) {
+      graph.RemoveNode(node);
+    }
+  }
+
   void RunToolbar() {
     if (ImGui::BeginMenuBar()) {
       if (ImGui::BeginMenu("Settings")) {
@@ -85,28 +117,13 @@ public:
         ImGui::EndMenu();
       }
       if (ImGui::BeginMenu("Nodes")) {
-        ShowIONodesMenu(graph);
-        ShowConverterNodesMenu(graph);
-        ShowHashNodesMenu(graph);
-        ShowArithmeticNodesMenu(graph);
+        RunNodes();
         ImGui::EndMenu();
       }
 
       if (ImGui::BeginMenu("Edit")) {
         if (ImGui::MenuItem("Delete Selected")) {
-          int nodes[ImNodes::NumSelectedNodes()];
-          int links[ImNodes::NumSelectedLinks()];
-
-          ImNodes::GetSelectedLinks(links);
-          ImNodes::GetSelectedNodes(nodes);
-
-          for (auto link : links) {
-            graph.Deconnect(link);
-          }
-
-          for (auto node : nodes) {
-            graph.RemoveNode(node);
-          }
+          DeleteSelected();
         }
         ImGui::EndMenu();
       }
@@ -147,6 +164,18 @@ public:
     if (minimap) {
       ImNodes::MiniMap(0.2f, ImNodesMiniMapLocation_BottomRight);
     }
+
+    if (ImGui::BeginPopupContextWindow()) {
+      if (ImGui::MenuItem("Delete")) {
+        DeleteSelected();
+      }
+      if (ImGui::BeginMenu("Add")) {
+        RunNodes();
+        ImGui::EndMenu();
+      }
+      ImGui::EndPopup();
+    }
+
     ImNodes::EndNodeEditor();
 
     {

@@ -186,6 +186,32 @@ public:
   }
 };
 
+class CommentNode : public Node {
+  std::string comment;
+
+public:
+  CommentNode() : Node("Comment") {}
+
+  void DisplayInternal() override {
+    ImGui::TextUnformatted(comment.c_str());
+
+    if (ImGui::Button("Edit")) {
+      ImGui::OpenPopup("Edit Comment");
+    }
+
+    if (ImGui::BeginPopupModal("Edit Comment")) {
+      ImGui::InputTextMultiline("##comment_input", &comment,
+                                ImVec2(-FLT_MIN, -FLT_MIN));
+      if (ImGui::Button("close")) {
+        ImGui::CloseCurrentPopup();
+      }
+      ImGui::EndPopup();
+    }
+  }
+
+  void ProcessInternal(Graph &graph) override {}
+};
+
 void ShowIONodesMenu(Graph &graph) {
   if (ImGui::BeginMenu("Input")) {
     CreateButton<StringInputNode>(graph, "String Input");
@@ -203,6 +229,11 @@ void ShowIONodesMenu(Graph &graph) {
 
   if (ImGui::BeginMenu("Buffer")) {
     CreateButton<ConcatBufferNode>(graph, "Concat Buffer");
+    ImGui::EndMenu();
+  }
+
+  if (ImGui::BeginMenu("Comment")) {
+    CreateButton<CommentNode>(graph, "Comment");
     ImGui::EndMenu();
   }
 }

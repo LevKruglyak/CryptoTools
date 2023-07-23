@@ -157,6 +157,82 @@ public:
   }
 };
 
+class ModularInverseNode : public Node {
+  int in1;
+  int in2;
+  int out;
+
+public:
+  ModularInverseNode() : Node("Modular Inverse") {
+    in1 = AddInput("in", LinkType::INTEGER);
+    in2 = AddInput("modulus", LinkType::INTEGER);
+    out = AddOutput("out", LinkType::INTEGER);
+  }
+
+  void DisplayInternal() override {}
+
+  void ProcessInternal(Graph &graph) override {
+    std::shared_ptr<Link> in1_link = GetInLink(graph, in1);
+    std::shared_ptr<Link> in2_link = GetInLink(graph, in2);
+    if (in1_link != nullptr && in2_link != nullptr) {
+      CryptoPP::Integer a = in1_link->getInteger();
+      CryptoPP::Integer b = in2_link->getInteger();
+      SetOutLinkInteger(graph, out,
+                        CryptoPP::EuclideanMultiplicativeInverse(a, b));
+    }
+  }
+};
+
+class GcdNode : public Node {
+  int in1;
+  int in2;
+  int out;
+
+public:
+  GcdNode() : Node("GCD") {
+    in1 = AddInput("first", LinkType::INTEGER);
+    in2 = AddInput("second", LinkType::INTEGER);
+    out = AddOutput("out", LinkType::INTEGER);
+  }
+
+  void DisplayInternal() override {}
+
+  void ProcessInternal(Graph &graph) override {
+    std::shared_ptr<Link> in1_link = GetInLink(graph, in1);
+    std::shared_ptr<Link> in2_link = GetInLink(graph, in2);
+    if (in1_link != nullptr && in2_link != nullptr) {
+      CryptoPP::Integer a = in1_link->getInteger();
+      CryptoPP::Integer b = in2_link->getInteger();
+      SetOutLinkInteger(graph, out, CryptoPP::GCD(a, b));
+    }
+  }
+};
+
+class LcmNode : public Node {
+  int in1;
+  int in2;
+  int out;
+
+public:
+  LcmNode() : Node("LCM") {
+    in1 = AddInput("first", LinkType::INTEGER);
+    in2 = AddInput("second", LinkType::INTEGER);
+    out = AddOutput("out", LinkType::INTEGER);
+  }
+
+  void DisplayInternal() override {}
+
+  void ProcessInternal(Graph &graph) override {
+    std::shared_ptr<Link> in1_link = GetInLink(graph, in1);
+    std::shared_ptr<Link> in2_link = GetInLink(graph, in2);
+    if (in1_link != nullptr && in2_link != nullptr) {
+      CryptoPP::Integer a = in1_link->getInteger();
+      CryptoPP::Integer b = in2_link->getInteger();
+      SetOutLinkInteger(graph, out, CryptoPP::LCM(a, b));
+    }
+  }
+};
+
 void ShowArithmeticNodesMenu(Graph &graph) {
   if (ImGui::BeginMenu("Arithmetic")) {
     CreateButton<AddIntegerNode>(graph, "Add");
@@ -165,6 +241,9 @@ void ShowArithmeticNodesMenu(Graph &graph) {
     CreateButton<DivideIntegerNode>(graph, "Divide");
     CreateButton<ModulusIntegerNode>(graph, "Modulus");
     CreateButton<ModularExponentNode>(graph, "Modular Exponent");
+    CreateButton<ModularInverseNode>(graph, "Modular Inverse");
+    CreateButton<GcdNode>(graph, "GCD");
+    CreateButton<LcmNode>(graph, "LCM");
     ImGui::EndMenu();
   }
 }
