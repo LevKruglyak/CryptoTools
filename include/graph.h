@@ -158,6 +158,7 @@ protected:
 public:
   bool processed;
   bool error = false;
+  bool error_toggle = false;
   std::string error_message;
 
   std::map<int, std::pair<std::shared_ptr<Port>, std::shared_ptr<Link>>> in;
@@ -232,10 +233,16 @@ public:
     modified |= DisplayInternal();
 
     if (error) {
+      if (!error_toggle) {
+        error_toggle = true;
+        modified = true;
+      }
+
       ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + width);
       ImGui::TextDisabled("[ERROR] %s", error_message.c_str());
       ImGui::PopTextWrapPos();
     }
+
     ImGui::PopID();
     ImNodes::EndStaticAttribute();
 
@@ -262,6 +269,7 @@ public:
       try {
         ProcessInternal(graph);
         error = false;
+        error_toggle = false;
         error_message = "";
       } catch (CryptoPP::Exception &e) {
         error_message = std::string(e.what());
