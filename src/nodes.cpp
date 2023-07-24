@@ -112,7 +112,9 @@ public:
     }
   }
 
-  void RunToolbar() {
+  bool RunToolbar() {
+    bool modified = false;
+
     if (ImGui::BeginMenuBar()) {
       if (ImGui::BeginMenu("Settings")) {
         ImGui::MenuItem("Minimap", NULL, &minimap);
@@ -127,15 +129,18 @@ public:
       if (ImGui::BeginMenu("Edit")) {
         if (ImGui::MenuItem("Delete Selected")) {
           DeleteSelected();
+          modified = true;
         }
         ImGui::EndMenu();
       }
       ImGui::EndMenuBar();
     }
+
+    return modified;
   }
 
   void Run() {
-    RunToolbar();
+    bool modified = RunToolbar();
 
     ImNodes::SetCurrentContext(ctx);
     ImNodes::PushAttributeFlag(
@@ -163,6 +168,7 @@ public:
     if (ImGui::BeginPopupContextWindow()) {
       if (ImGui::MenuItem("Delete")) {
         DeleteSelected();
+        modified = true;
       }
       if (ImGui::BeginMenu("Add")) {
         RunNodes();
@@ -172,7 +178,6 @@ public:
     }
     ImGui::PopStyleVar(2);
 
-    bool modified = false;
     for (auto pair : graph.nodes) {
       modified |= pair.second->Display();
     }

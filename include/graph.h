@@ -74,7 +74,8 @@ public:
     shape = LinkTypeToImNodesShape(type);
   }
 
-  void Display(bool connected) {
+  bool Display(bool connected) {
+    bool modified = false;
     if (in) {
       ImNodes::BeginInputAttribute(id, shape);
       if (show_input && type == INTEGER && !connected) {
@@ -83,6 +84,7 @@ public:
         if (ImGui::InputText(label.c_str(), &input,
                              ImGuiInputTextFlags_CharsDecimal)) {
           input_integer = CryptoPP::Integer(input.c_str());
+          modified = true;
         }
         ImGui::PopID();
       } else {
@@ -97,6 +99,8 @@ public:
       ImGui::TextUnformatted(label.c_str());
       ImNodes::EndOutputAttribute();
     }
+
+    return modified;
   }
 
   const CryptoPP::Integer &GetManualInputInteger() { return input_integer; }
@@ -212,6 +216,7 @@ public:
   }
 
   bool Display() {
+    bool modified = false;
     ImNodes::BeginNode(id);
 
     ImNodes::BeginNodeTitleBar();
@@ -219,12 +224,12 @@ public:
     ImNodes::EndNodeTitleBar();
 
     for (auto port_link : out) {
-      port_link.second.first->Display(false);
+      modified |= port_link.second.first->Display(false);
     }
 
     ImNodes::BeginStaticAttribute(internal_id);
     ImGui::PushID(id);
-    bool modified = DisplayInternal();
+    modified |= DisplayInternal();
 
     if (error) {
       ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + width);
@@ -235,7 +240,8 @@ public:
     ImNodes::EndStaticAttribute();
 
     for (auto port_link : in) {
-      port_link.second.first->Display(port_link.second.second != nullptr);
+      modified |=
+          port_link.second.first->Display(port_link.second.second != nullptr);
     }
 
     ImNodes::EndNode();
