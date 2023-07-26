@@ -7,6 +7,7 @@
 #include "nodes/hash.h"
 #include "nodes/input.h"
 #include "nodes/output.h"
+#include "nodes/random.h"
 #include "nodes/template.h"
 
 #endif

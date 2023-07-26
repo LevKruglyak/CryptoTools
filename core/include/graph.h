@@ -441,9 +441,21 @@ public:
 
     ImNodes::BeginStaticAttribute(internal.GetID());
     ImGui::PushID(internal.GetID());
-    modified |= DisplayInternal();
 
-    // If there was an error with the calculation, display it
+    error = true;
+    const char *what = "";
+
+    try {
+      modified |= DisplayInternal();
+      error = false;
+      error_toggle = false;
+    } catch (CryptoPP::Exception &e) {
+      what = e.what();
+    } catch (std::exception &e) {
+      what = e.what();
+    }
+
+    // If there was an error, display it
     if (error) {
       if (!error_toggle) {
         error_toggle = true;
