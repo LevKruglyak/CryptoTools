@@ -41,7 +41,7 @@ template <typename Node> class ID {
 
 public:
   ID() { id = GenerateID(); }
-  ID(const ID &_id) { id = _id.id; }
+  ID(const ID &id) { this->id = id.id; }
   ID(int id) : id(id) {}
 
   friend bool operator==(const ID &lhs, const ID &rhs) {
@@ -217,7 +217,7 @@ public:
   DataType GetType() const { return type; }
 
   LinkPtr GetLink() { return link; }
-  void SetLink(LinkPtr _link) { link = _link; }
+  void SetLink(LinkPtr link) { this->link = link; }
 };
 
 class OutPin : public Component<OutPinID> {
@@ -331,6 +331,9 @@ public:
 public:
   Node(const char *label, float width = 120.0f)
       : label(label), width(width), Component() {}
+
+  const char *GetLabel() const { return label; }
+  void SetLabel(const char *label) { this->label = label; }
 
   const Integer &GetInInteger(InPinID in_id) {
     auto in_link = in_pins[in_id]->GetLink();
@@ -446,8 +449,11 @@ public:
 
 protected:
   virtual bool DisplayInternal() { return false; };
-  virtual bool RecalculateInternal() = 0;
+  virtual void RecalculateInternal() = 0;
 };
+
+#define NODE_STATIC_NAME(name)                                                 \
+  static constexpr const char *StaticNodeName() { return name; }
 
 class Graph : public GraphStorage {
 public:
@@ -588,21 +594,3 @@ public:
 };
 
 } // namespace cptl
-
-namespace ImGui {
-
-template <typename NODE>
-bool AddNodeMenuItem(cptl::Graph &graph, const char *label) {
-  if (ImGui::MenuItem(label)) {
-    auto node = std::make_shared<NODE>();
-    graph.AddNode(node);
-
-    ImNodes::SetNodeScreenSpacePos(node->id, ImGui::GetMousePos());
-    ImNodes::SnapNodeToGrid(node->id);
-    return true;
-  }
-
-  return false;
-}
-
-} // namespace ImGui

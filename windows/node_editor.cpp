@@ -13,12 +13,24 @@ class Editor {
   bool snapgrid = true;
 
 public:
-  void RunNodes() {
-    // ShowIONodesMenu(graph);
-    // ShowConverterNodesMenu(graph);
-    // ShowHashNodesMenu(graph);
-    // ShowArithmeticNodesMenu(graph);
-    // ShowRandomNodesMenu(graph);
+  bool NodesMenu() {
+    for (auto pair : REFLECTED_NODES) {
+      if (ImGui::BeginMenu(pair.first.c_str())) {
+        for (auto node : pair.second) {
+          if (ImGui::MenuItem(node.name)) {
+            cptl::NodePtr ptr = node.create();
+            graph.AddNode(ptr);
+
+            ImNodes::SetNodeScreenSpacePos(ptr->GetID(), ImGui::GetMousePos());
+            ImNodes::SnapNodeToGrid(ptr->GetID());
+            return true;
+          }
+        }
+        ImGui::EndMenu();
+      }
+    }
+
+    return false;
   }
 
   void DeleteSelected() {
@@ -49,7 +61,7 @@ public:
         ImGui::EndMenu();
       }
       if (ImGui::BeginMenu("Nodes")) {
-        RunNodes();
+        modified |= NodesMenu();
         ImGui::EndMenu();
       }
 
@@ -94,7 +106,7 @@ public:
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, frame_pad);
     if (ImGui::BeginPopupContextWindow()) {
       if (ImGui::BeginMenu("Add")) {
-        RunNodes();
+        modified |= NodesMenu();
         ImGui::EndMenu();
       }
       if (ImGui::MenuItem("Delete")) {

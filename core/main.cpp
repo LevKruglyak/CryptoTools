@@ -5,9 +5,9 @@
 #include "imgui_default_settings.h"
 #include "registry.h"
 
-// // Registry
-// #include "nodes.h"
-// #include "windows.h"
+// Registry
+#include "nodes.h"
+#include "windows.h"
 
 #include <iostream>
 #include <sstream>
@@ -129,7 +129,7 @@ std::vector<HelloImGui::DockableWindow>
 CreateDockableWindows(AppState &appState) {
   std::vector<HelloImGui::DockableWindow> dockableWindows;
 
-  for (auto create_window : CREATE_WINDOWS) {
+  for (auto create_window : REFLECTED_WINDOWS) {
     dockableWindows.push_back(create_window());
   }
 
