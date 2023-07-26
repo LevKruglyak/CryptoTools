@@ -3,6 +3,7 @@
 #include "hello_imgui.h"
 #include "imgui.h"
 #include "imgui_default_settings.h"
+#include "registry.h"
 
 // // Registry
 // #include "nodes.h"
@@ -10,9 +11,6 @@
 
 #include <iostream>
 #include <sstream>
-
-std::vector<std::function<HelloImGui::DockableWindow()>> CREATE_WINDOWS;
-const char *DOCK_AREA = "MiscArea";
 
 struct CryptoToolsSettings {
   std::string name = "CryptoTools";

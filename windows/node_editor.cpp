@@ -1,7 +1,6 @@
 #include "graph.h"
 #include "imgui.h"
 #include "imnodes.h"
-#include "main.h"
 #include "ui.h"
 #include "windows.h"
 #include <cfloat>
@@ -94,13 +93,13 @@ public:
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, window_pad);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, frame_pad);
     if (ImGui::BeginPopupContextWindow()) {
-      if (ImGui::MenuItem("Delete")) {
-        DeleteSelected();
-        modified = true;
-      }
       if (ImGui::BeginMenu("Add")) {
         RunNodes();
         ImGui::EndMenu();
+      }
+      if (ImGui::MenuItem("Delete")) {
+        DeleteSelected();
+        modified = true;
       }
       ImGui::EndPopup();
     }
