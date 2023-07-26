@@ -16,11 +16,20 @@ FetchContent_MakeAvailable(crypto_cmake)
 FetchContent_Declare(fmt GIT_REPOSITORY https://github.com/fmtlib/fmt.git)
 FetchContent_MakeAvailable(fmt)
 
-FILE(GLOB SOURCES_CRYPTOTOOLS ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp ${CMAKE_CURRENT_LIST_DIR}/imnodes/*.cpp)
+FILE(GLOB SOURCES_CRYPTOTOOLS 
+  ${CMAKE_CURRENT_LIST_DIR}/core/*.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/nodes/*.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/windows/*.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/lib/imnodes/*.cpp)
 
 hello_imgui_add_app(cryptotools ${SOURCES_CRYPTOTOOLS})
 target_link_libraries(cryptotools PRIVATE fmt)
 target_link_libraries(cryptotools PRIVATE cryptopp)
-target_include_directories(cryptotools PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/imnodes")
+
+target_include_directories(cryptotools PRIVATE 
+  "${CMAKE_CURRENT_SOURCE_DIR}/core/include" 
+  "${CMAKE_CURRENT_SOURCE_DIR}/registry" 
+  "${CMAKE_CURRENT_SOURCE_DIR}/lib/imnodes")
+
 target_compile_options(cryptotools PRIVATE -fsanitize=address)
 target_link_options(cryptotools PRIVATE -fsanitize=address)

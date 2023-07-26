@@ -1,110 +1,37 @@
-#include "nodes.h"
+#include "graph.h"
 #include "imgui.h"
 #include "imnodes.h"
+#include "main.h"
 #include "ui.h"
 #include <cfloat>
 #include <iostream>
 
-static int id = 0;
-
-int GenerateId() { return id++; }
-
-void Graph::AddNode(std::shared_ptr<Node> node) {
-  nodes[node->id] = node;
-  for (auto port_pair : node->in) {
-    ports[port_pair.first] = port_pair.second.first;
-  }
-  for (auto port_pair : node->out) {
-    ports[port_pair.first] = port_pair.second.first;
-  }
-}
-
-void Graph::RemoveNode(int id) {
-  auto node = nodes[id];
-  if (node != nullptr) {
-    for (auto port_pair : node->in) {
-      ports.erase(port_pair.first);
-    }
-    for (auto port_pair : node->out) {
-      ports.erase(port_pair.first);
-    }
-    nodes.erase(node->id);
-  }
-}
-
-void Graph::Connect(int start, int end) {
-  auto start_port = ports[start];
-  auto end_port = ports[end];
-
-  if (start_port->type == end_port->type) {
-    auto start_node = nodes[start_port->parent_id];
-    auto end_node = nodes[end_port->parent_id];
-
-    auto link = std::make_shared<Link>(start_node->id, start, end_node->id, end,
-                                       start_port->type);
-
-    if (end_node->in[end].second == nullptr) {
-      end_node->in[end].second = link;
-      start_node->out[start].second.insert(link);
-      links[link->id] = link;
-    }
-  }
-}
-
-void Graph::Deconnect(int id) {
-  auto link = links[id];
-
-  if (link != nullptr) {
-    auto start_node = nodes[link->in_node];
-    auto end_node = nodes[link->out_node];
-
-    if (start_node != nullptr) {
-      start_node->out[link->in_attr].second.erase(link);
-    }
-
-    if (end_node != nullptr) {
-      end_node->in[link->out_attr].second = nullptr;
-    }
-
-    links.erase(link->id);
-  }
-}
-
-void Graph::Process() {
-  for (auto pair : nodes) {
-    pair.second->processed = false;
-  }
-
-  for (auto pair : nodes) {
-    pair.second->Process(*this);
-  }
-}
-
 class Editor {
   ImNodesContext *ctx;
-  Graph graph;
+  cptl::Graph graph;
   bool minimap = true;
   bool snapgrid = true;
 
 public:
   void RunNodes() {
-    ShowIONodesMenu(graph);
-    ShowConverterNodesMenu(graph);
-    ShowHashNodesMenu(graph);
-    ShowArithmeticNodesMenu(graph);
-    ShowRandomNodesMenu(graph);
+    // ShowIONodesMenu(graph);
+    // ShowConverterNodesMenu(graph);
+    // ShowHashNodesMenu(graph);
+    // ShowArithmeticNodesMenu(graph);
+    // ShowRandomNodesMenu(graph);
   }
 
   void DeleteSelected() {
     ImNodes::SetCurrentContext(ctx);
-    int nodes[ImNodes::NumSelectedNodes()];
-    int links[ImNodes::NumSelectedLinks()];
 
-    ImNodes::GetSelectedLinks(links);
-    ImNodes::GetSelectedNodes(nodes);
+    std::vector<int> nodes(ImNodes::NumSelectedNodes());
+    std::vector<int> links(ImNodes::NumSelectedLinks());
+
+    ImNodes::GetSelectedLinks(links.data());
+    ImNodes::GetSelectedNodes(nodes.data());
 
     for (auto link : links) {
-      graph.Deconnect(link);
+      graph.Disconnect(link);
     }
 
     for (auto node : nodes) {
@@ -178,13 +105,7 @@ public:
     }
     ImGui::PopStyleVar(2);
 
-    for (auto pair : graph.nodes) {
-      modified |= pair.second->Display();
-    }
-
-    for (auto pair : graph.links) {
-      pair.second->Display();
-    }
+    graph.Display();
 
     if (minimap) {
       ImNodes::MiniMap(0.2f, ImNodesMiniMapLocation_BottomRight);
@@ -206,13 +127,13 @@ public:
       int id;
 
       if (ImNodes::IsLinkDestroyed(&id)) {
-        graph.Deconnect(id);
+        graph.Disconnect(id);
         modified = true;
       }
     }
 
     if (modified) {
-      graph.Process();
+      graph.Recalculate();
     }
     ImNodes::PopAttributeFlag();
   }
@@ -221,13 +142,11 @@ public:
   ~Editor() { ImNodes::DestroyContext(ctx); }
 };
 
-void NodesFunction() {}
-
 HelloImGui::DockableWindow createNodesWindow() {
   static Editor editor;
   HelloImGui::DockableWindow window;
   window.label = "Node Editor";
-  window.dockSpaceName = dockArea;
+  window.dockSpaceName = DOCK_AREA;
   window.isVisible = false;
   window.GuiFunction = [&] { editor.Run(); };
   window.imGuiWindowFlags |= ImGuiWindowFlags_MenuBar;

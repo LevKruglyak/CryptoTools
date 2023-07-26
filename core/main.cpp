@@ -7,7 +7,8 @@
 #include <iostream>
 #include <sstream>
 
-const char *dockArea = "MiscArea";
+std::vector<std::function<HelloImGui::DockableWindow()>> CREATE_WINDOWS;
+const char *DOCK_AREA = "MiscArea";
 
 struct CryptoToolsSettings {
   std::string name = "CryptoTools";
@@ -95,7 +96,7 @@ void ShowAppMenuItems() {
   if (ImGui::MenuItem("Custom Item")) {
     HelloImGui::DockableWindow window;
     window.label = "Sample Window";
-    window.dockSpaceName = dockArea;
+    window.dockSpaceName = DOCK_AREA;
     window.GuiFunction = [] { ImGui::Text("hello, wrold"); };
     window.focusWindowAtNextFrame = true;
     window.isVisible = true;
@@ -114,7 +115,7 @@ void ShowAppMenuItems() {
 std::vector<HelloImGui::DockingSplit> CreateDefaultDockingSplits() {
   HelloImGui::DockingSplit splitMainMisc;
   splitMainMisc.initialDock = "MainDockSpace";
-  splitMainMisc.newDock = dockArea;
+  splitMainMisc.newDock = DOCK_AREA;
   splitMainMisc.direction = ImGuiDir_Down;
   splitMainMisc.ratio = 0.25f;
 
@@ -124,12 +125,11 @@ std::vector<HelloImGui::DockingSplit> CreateDefaultDockingSplits() {
 
 std::vector<HelloImGui::DockableWindow>
 CreateDockableWindows(AppState &appState) {
-  std::vector<HelloImGui::DockableWindow> dockableWindows{
-      createHashWindow(),
-      createArithmeticWindow(),
-      createScratchWindow(),
-      createNodesWindow(),
-  };
+  std::vector<HelloImGui::DockableWindow> dockableWindows;
+
+  for (auto create_window : CREATE_WINDOWS) {
+    dockableWindows.push_back(create_window());
+  }
 
   return dockableWindows;
 };

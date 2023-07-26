@@ -1,7 +1,6 @@
 #include "imgui.h"
-#include "ui.h"
-#include <cfloat>
-#include <iostream>
+#include "main.h"
+#include <string>
 
 std::string buffer = "";
 
@@ -13,7 +12,7 @@ void ScratchFunction() {
 HelloImGui::DockableWindow createScratchWindow() {
   HelloImGui::DockableWindow window;
   window.label = "Scratch Space";
-  window.dockSpaceName = dockArea;
+  window.dockSpaceName = DOCK_AREA;
   window.isVisible = false;
   window.GuiFunction = ScratchFunction;
   return window;
