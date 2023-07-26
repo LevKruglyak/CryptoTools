@@ -43,7 +43,6 @@ template <typename Node> class ID {
 
 public:
   ID() { id = GenerateID(); }
-  ID(const ID &id) { this->id = id.id; }
   ID(int id) : id(id) {}
 
   friend bool operator==(const ID &lhs, const ID &rhs) {
@@ -106,10 +105,10 @@ public:
     sink = std::make_shared<CryptoPP::StringSink>(this->data);
   }
 
-  Buffer(const Buffer &buffer) {
-    data = buffer.data;
-    sink = std::make_shared<CryptoPP::StringSink>(data);
-  }
+  // Buffer(const Buffer &buffer) {
+  //   data = buffer.data;
+  //   sink = std::make_shared<CryptoPP::StringSink>(data);
+  // }
 
   Buffer(const CryptoPP::byte *data, size_t length) {
     Buffer(std::string(reinterpret_cast<const char *>(data), length));
@@ -139,6 +138,7 @@ public:
   static const Buffer &Empty() { return empty_buffer; }
 
   void resize(size_t len) { data.resize(len); }
+  void clear() { data.clear(); }
 
   operator std::string &() { return data; }
   operator std::string *() { return &data; }
@@ -159,29 +159,7 @@ public:
   }
 };
 
-class Integer;
-extern Integer zero_integer;
-
-class Integer {
-  CryptoPP::Integer data = CryptoPP::Integer::Zero();
-
-public:
-  Integer() {}
-
-  Integer(const CryptoPP::Integer &data) : data(data) {}
-
-  /// Overwrite the content of the integer with the parsed string
-  void SetFromDecimalString(const std::string &string) {
-    data = CryptoPP::Integer(string.c_str());
-  }
-
-  /// Return a const reference to the zero integer
-  static const Integer &Zero() { return zero_integer; }
-
-  operator const CryptoPP::Integer &() const { return data; }
-  operator CryptoPP::Integer &() { return data; }
-  operator CryptoPP::Integer() const { return data; }
-};
+typedef CryptoPP::Integer Integer;
 
 class InPin : public Component<InPinID> {
   const char *label;      /// label which appears next to the pin
@@ -200,7 +178,7 @@ class InPin : public Component<InPinID> {
       ImGui::SetNextItemWidth(textbox_width);
       if (ImGui::InputText(label, &input_buffer,
                            ImGuiInputTextFlags_CharsDecimal)) {
-        integer.SetFromDecimalString(input_buffer);
+        integer = Integer(input_buffer.c_str());
         return true;
       }
 
@@ -216,15 +194,15 @@ class InPin : public Component<InPinID> {
 public:
   InPin(const char *label, DataType type, NodeID parent_id,
         bool display_manual_input = true)
-      : label(label), type(type), parent_id(parent_id),
-        display_manual_input(display_manual_input), Component() {}
+      : Component(), label(label), type(type), parent_id(parent_id),
+        display_manual_input(display_manual_input) {}
 
   bool Display(const float node_width) {
     ImGui::PushID(GetID());
     bool modified = false;
 
     // Make sure all conditions are met to show manual input integer
-    bool is_connected = (link == nullptr);
+    bool is_connected = (link != nullptr);
     bool should_display_manual_input =
         !is_connected && display_manual_input && (type == DataType::INTEGER);
 
@@ -235,7 +213,7 @@ public:
         manual_input = std::make_unique<ManualIntegerInput>();
       }
 
-      manual_input->Display(label, node_width);
+      modified |= manual_input->Display(label, node_width);
     } else {
       // Destroy manual input if we haven't yet
       if (manual_input != nullptr) {
@@ -272,7 +250,7 @@ class OutPin : public Component<OutPinID> {
 
 public:
   OutPin(const char *label, DataType type, NodeID parent_id)
-      : label(label), type(type), parent_id(parent_id), Component() {}
+      : Component(), label(label), type(type), parent_id(parent_id) {}
 
   bool Display(const float node_width) {
     // Calculate offset so that pin label is right-aligned
@@ -295,7 +273,6 @@ public:
 
 class Link : public Component<LinkID> {
   const DataType type;
-  std::variant<Buffer, Integer> data;
 
   const NodeID in_node;
   const NodeID out_node;
@@ -303,10 +280,13 @@ class Link : public Component<LinkID> {
   const OutPinID in_pin;
   const InPinID out_pin;
 
+  std::variant<Buffer, Integer> data;
+
 public:
   Link(const OutPinPtr &in, const InPinPtr &out)
-      : in_pin(in->GetID()), out_pin(out->GetID()), in_node(in->GetParentID()),
-        out_node(out->GetParentID()), type(out->GetType()), Component() {
+      : Component(), type(out->GetType()), in_node(in->GetParentID()),
+        out_node(out->GetParentID()), in_pin(in->GetID()),
+        out_pin(out->GetID()) {
     switch (type) {
     case DataType::BUFFER:
       data = Buffer();
@@ -378,7 +358,8 @@ public:
 
 public:
   Node(const std::string &label, float width = 120.0f)
-      : label(label), width(width), Component() {}
+      : Component(), label(label), width(width) {}
+  ~Node() {}
 
   const std::string &GetLabel() const { return label; }
   void SetLabel(const std::string &label) { this->label = label; }
@@ -442,17 +423,9 @@ public:
     ImNodes::BeginStaticAttribute(internal.GetID());
     ImGui::PushID(internal.GetID());
 
-    error = true;
-    const char *what = "";
-
     try {
       modified |= DisplayInternal();
-      error = false;
-      error_toggle = false;
-    } catch (CryptoPP::Exception &e) {
-      what = e.what();
     } catch (std::exception &e) {
-      what = e.what();
     }
 
     // If there was an error, display it
@@ -499,11 +472,11 @@ public:
         error_toggle = false;
       } catch (CryptoPP::Exception &e) {
         what = e.what();
+        error_message = std::string(what);
       } catch (std::exception &e) {
         what = e.what();
+        error_message = std::string(what);
       }
-
-      error_message = std::string(what);
     }
   }
 
@@ -549,8 +522,8 @@ public:
     auto end_pin = in_pins[end_id];
 
     // Make sure pins exist, pin types match
-    if (start_pin != nullptr ||
-        end_pin != nullptr && start_pin->GetType() == end_pin->GetType()) {
+    if (start_pin != nullptr && end_pin != nullptr &&
+        start_pin->GetType() == end_pin->GetType()) {
       auto link = end_pin->GetLink();
 
       if (link != nullptr) {

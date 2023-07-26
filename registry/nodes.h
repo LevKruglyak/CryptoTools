@@ -4,6 +4,8 @@
 #include "main.h"
 #include "registry.h"
 
+#include "nodes/arithmetic.h"
+#include "nodes/converter.h"
 #include "nodes/hash.h"
 #include "nodes/input.h"
 #include "nodes/output.h"

@@ -20,10 +20,12 @@ public:
         for (auto node : pair.second) {
           if (ImGui::MenuItem(node.name.c_str())) {
             cptl::NodePtr ptr = node.create();
+            ImNodes::SetNodeScreenSpacePos(ptr->GetID(), ImGui::GetMousePos());
+            if (snapgrid) {
+              ImNodes::SnapNodeToGrid(ptr->GetID());
+            }
             graph.AddNode(ptr);
 
-            ImNodes::SetNodeScreenSpacePos(ptr->GetID(), ImGui::GetMousePos());
-            ImNodes::SnapNodeToGrid(ptr->GetID());
             return true;
           }
         }
@@ -148,6 +150,7 @@ public:
     if (modified) {
       graph.Recalculate();
     }
+
     ImNodes::PopAttributeFlag();
   }
 
