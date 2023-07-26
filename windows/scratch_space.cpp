@@ -1,5 +1,6 @@
 #include "imgui.h"
 #include "main.h"
+#include "windows.h"
 #include <string>
 
 std::string buffer = "";
@@ -9,7 +10,7 @@ void ScratchFunction() {
                             ImVec2(-FLT_MIN, -FLT_MIN));
 }
 
-HelloImGui::DockableWindow createScratchWindow() {
+HelloImGui::DockableWindow CreateWindow_ScratchSpace() {
   HelloImGui::DockableWindow window;
   window.label = "Scratch Space";
   window.dockSpaceName = DOCK_AREA;

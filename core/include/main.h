@@ -23,7 +23,11 @@ extern std::vector<std::function<HelloImGui::DockableWindow()>> CREATE_WINDOWS;
 /// Macro hackery to provide compile-time reflection of dockable windows
 #define DEFINE_WINDOW(name)                                                    \
   HelloImGui::DockableWindow CreateWindow_##name();                            \
-  inline class name##_t_ {                                                     \
+  class __##name##_t_ {                                                        \
   public:                                                                      \
-    name##_t_() { CREATE_WINDOWS.push_back(CreateWindow_##name); }             \
-  } name##_instance_;
+    __##name##_t_() {                                                          \
+      CREATE_WINDOWS.push_back(CreateWindow_##name);                           \
+      std::cout << "[REGISTRY] Loaded window: " << #name << std::endl;         \
+    }                                                                          \
+  };                                                                           \
+  inline __##name##_t_ __##name##_instance_t_;\

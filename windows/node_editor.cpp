@@ -3,6 +3,7 @@
 #include "imnodes.h"
 #include "main.h"
 #include "ui.h"
+#include "windows.h"
 #include <cfloat>
 #include <iostream>
 
@@ -142,7 +143,7 @@ public:
   ~Editor() { ImNodes::DestroyContext(ctx); }
 };
 
-HelloImGui::DockableWindow createNodesWindow() {
+HelloImGui::DockableWindow CreateWindow_NodeEditor() {
   static Editor editor;
   HelloImGui::DockableWindow window;
   window.label = "Node Editor";
