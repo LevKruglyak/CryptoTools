@@ -8,9 +8,11 @@
 #include "misc/cpp/imgui_stdlib.h"
 #include <cryptopp/nbtheory.h>
 #include <exception>
+#include <iostream>
 #include <map>
 #include <optional>
 #include <set>
+#include <stack>
 #include <variant>
 #include <vector>
 
@@ -89,18 +91,28 @@ inline constexpr ImNodesPinShape DataTypeToShape(DataType type) {
   }
 }
 
+class Buffer;
+extern Buffer empty_buffer;
+
 class Buffer {
   std::string data;
   std::shared_ptr<CryptoPP::StringSink> sink;
 
-  static Buffer empty_buffer;
-
 public:
   Buffer() { sink = std::make_shared<CryptoPP::StringSink>(data); }
+
+  Buffer(const std::string &data) {
+    this->data = data;
+    sink = std::make_shared<CryptoPP::StringSink>(this->data);
+  }
 
   Buffer(const Buffer &buffer) {
     data = buffer.data;
     sink = std::make_shared<CryptoPP::StringSink>(data);
+  }
+
+  Buffer(const CryptoPP::byte *data, size_t length) {
+    Buffer(std::string(reinterpret_cast<const char *>(data), length));
   }
 
   /// Return a constant pointer to a `char` array
@@ -108,7 +120,12 @@ public:
 
   /// Return a constant pointer to a `byte` array
   const CryptoPP::byte *const_byte_ptr() const {
-    return (const CryptoPP::byte *)data.c_str();
+    return reinterpret_cast<const CryptoPP::byte *>(data.c_str());
+  }
+
+  /// Return a pointer to a `byte` array
+  CryptoPP::byte *byte_ptr() {
+    return reinterpret_cast<CryptoPP::byte *>(data.data());
   }
 
   /// Return a reference to the internal `StringSink` for compatibility with the
@@ -121,16 +138,37 @@ public:
   /// Return a const reference to the empty buffer
   static const Buffer &Empty() { return empty_buffer; }
 
+  void resize(size_t len) { data.resize(len); }
+
   operator std::string &() { return data; }
+  operator std::string *() { return &data; }
+
+  template <typename Transformer> Buffer Transform() {
+    Transformer transform;
+    transform.Put(const_byte_ptr(), length());
+    transform.MessageEnd();
+
+    Buffer transformed;
+    CryptoPP::word64 size = transform.MaxRetrievable();
+    if (size && size <= SIZE_MAX) {
+      transformed.resize(size);
+      transform.Get(transformed.byte_ptr(), transformed.length());
+    }
+
+    return transformed;
+  }
 };
+
+class Integer;
+extern Integer zero_integer;
 
 class Integer {
   CryptoPP::Integer data = CryptoPP::Integer::Zero();
 
-  static Integer zero;
-
 public:
   Integer() {}
+
+  Integer(const CryptoPP::Integer &data) : data(data) {}
 
   /// Overwrite the content of the integer with the parsed string
   void SetFromDecimalString(const std::string &string) {
@@ -138,9 +176,11 @@ public:
   }
 
   /// Return a const reference to the zero integer
-  static const Integer &Zero() { return zero; }
+  static const Integer &Zero() { return zero_integer; }
 
+  operator const CryptoPP::Integer &() const { return data; }
   operator CryptoPP::Integer &() { return data; }
+  operator CryptoPP::Integer() const { return data; }
 };
 
 class InPin : public Component<InPinID> {
@@ -210,7 +250,11 @@ public:
   }
 
   const Integer &GetManualInputInteger() const {
-    return manual_input->GetInteger();
+    if (manual_input != nullptr) {
+      return manual_input->GetInteger();
+    } else {
+      return Integer::Zero();
+    }
   }
 
   const NodeID GetParentID() const { return parent_id; }
@@ -282,6 +326,10 @@ public:
   const Integer &getInteger() const { return std::get<Integer>(data); }
   DataType GetType() const { return type; }
 
+  void setBuffer(CryptoPP::byte *data, size_t len) {
+    this->data = Buffer(std::string(reinterpret_cast<char *>(data), len));
+  }
+
   void setBuffer(const Buffer &buffer) { data = buffer; }
   void setInteger(const Integer &integer) { data = integer; }
 
@@ -312,8 +360,7 @@ public:
 };
 
 class Node : public Component<NodeID> {
-  const char *label;
-  float width;
+  std::string label;
 
   bool error = false;
   bool error_toggle = false;
@@ -323,17 +370,18 @@ class Node : public Component<NodeID> {
   Component<ID<StaticAttribute>> internal;
 
 public:
+  float width;
   bool needs_update = true;
 
   std::map<InPinID, std::shared_ptr<InPin>> in_pins;
   std::map<OutPinID, std::shared_ptr<OutPin>> out_pins;
 
 public:
-  Node(const char *label, float width = 120.0f)
+  Node(const std::string &label, float width = 120.0f)
       : label(label), width(width), Component() {}
 
-  const char *GetLabel() const { return label; }
-  void SetLabel(const char *label) { this->label = label; }
+  const std::string &GetLabel() const { return label; }
+  void SetLabel(const std::string &label) { this->label = label; }
 
   const Integer &GetInInteger(InPinID in_id) {
     auto in_link = in_pins[in_id]->GetLink();
@@ -359,9 +407,9 @@ public:
     }
   }
 
-  void SetInBuffer(OutPinID out_id, const Buffer &buffer) {
+  void SetOutInteger(OutPinID out_id, const Integer &integer) {
     for (auto out_link : out_pins[out_id]->GetLinks()) {
-      out_link->setBuffer(buffer);
+      out_link->setInteger(integer);
     }
   }
 
@@ -384,7 +432,7 @@ public:
     ImNodes::BeginNode(GetID());
 
     ImNodes::BeginNodeTitleBar();
-    ImGui::TextUnformatted(label);
+    ImGui::TextUnformatted(label.c_str());
     ImNodes::EndNodeTitleBar();
 
     for (auto pin : out_pins) {
@@ -453,7 +501,7 @@ protected:
 };
 
 #define NODE_STATIC_NAME(name)                                                 \
-  static constexpr const char *StaticNodeName() { return name; }
+  static const std::string StaticNodeName() { return name; }
 
 class Graph : public GraphStorage {
 public:
@@ -512,12 +560,13 @@ public:
     // TODO: prevent circular dependencies
 
     // Make sure pins exist, pin types match
-    if (start_pin != nullptr ||
-        end_pin != nullptr && start_pin->GetType() == end_pin->GetType()) {
+    if (start_pin != nullptr && end_pin != nullptr &&
+        start_pin->GetType() == end_pin->GetType()) {
       auto start_node = nodes[start_pin->GetParentID()];
       auto end_node = nodes[end_pin->GetParentID()];
 
       if (start_node != nullptr && end_node != nullptr) {
+
         auto link = std::make_shared<Link>(start_pin, end_pin);
 
         // If the output pin already has a connected pin, disconnect it
@@ -526,8 +575,10 @@ public:
           Disconnect(old_link);
         }
 
-        // Add new link and return ID
+        // Add new link
         end_pin->SetLink(link);
+        start_pin->AddLink(link);
+        links[link->GetID()] = link;
       }
     }
   }
@@ -548,17 +599,33 @@ public:
   /// Remove a node from the graph.
   void RemoveNode(NodeID node_id) {
     NodePtr node_ptr = nodes[node_id];
+    std::stack<LinkPtr> links_to_remove;
 
     if (node_ptr != nullptr) {
-      nodes.erase(node_ptr->GetID());
 
       for (auto pin : node_ptr->in_pins) {
+        auto link = pin.second->GetLink();
+        if (link != nullptr) {
+          links_to_remove.push(link);
+        }
+
         in_pins.erase(pin.first);
       }
 
       for (auto pin : node_ptr->out_pins) {
+        for (auto link : pin.second->GetLinks()) {
+          links_to_remove.push(link);
+        }
+
         out_pins.erase(pin.first);
       }
+
+      while (!links_to_remove.empty()) {
+        Disconnect(links_to_remove.top());
+        links_to_remove.pop();
+      }
+
+      nodes.erase(node_ptr->GetID());
     }
   }
 

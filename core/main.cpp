@@ -6,8 +6,8 @@
 #include "registry.h"
 
 // Registry
-#include "nodes.h"
-#include "windows.h"
+#include "registry/nodes.h"
+#include "registry/windows.h"
 
 #include <iostream>
 #include <sstream>

@@ -1,8 +1,9 @@
 #include "graph.h"
 #include "imgui.h"
 #include "imnodes.h"
+#include "main.h"
+#include "registry.h"
 #include "ui.h"
-#include "windows.h"
 #include <cfloat>
 #include <iostream>
 
@@ -17,7 +18,7 @@ public:
     for (auto pair : REFLECTED_NODES) {
       if (ImGui::BeginMenu(pair.first.c_str())) {
         for (auto node : pair.second) {
-          if (ImGui::MenuItem(node.name)) {
+          if (ImGui::MenuItem(node.name.c_str())) {
             cptl::NodePtr ptr = node.create();
             graph.AddNode(ptr);
 
@@ -117,7 +118,7 @@ public:
     }
     ImGui::PopStyleVar(2);
 
-    graph.Display();
+    modified |= graph.Display();
 
     if (minimap) {
       ImNodes::MiniMap(0.2f, ImNodesMiniMapLocation_BottomRight);

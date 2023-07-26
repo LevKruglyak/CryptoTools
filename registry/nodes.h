@@ -1,15 +1,12 @@
-#pragma once
+#ifndef __NODE_REGISTRY
+#define __NODE_REGISTRY
 
 #include "main.h"
 #include "registry.h"
 
-class TemplateNode : public cptl::Node {
-public:
-  NODE_STATIC_NAME("TemplateNode");
-  TemplateNode() : Node(StaticNodeName()) {}
+#include "nodes/hash.h"
+#include "nodes/input.h"
+#include "nodes/output.h"
+#include "nodes/template.h"
 
-  bool DisplayInternal() override { return false; }
-  void RecalculateInternal() override {}
-};
-
-DEFINE_NODE(TemplateNode, Misc);
+#endif

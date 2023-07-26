@@ -1,11 +1,10 @@
 #include "imgui.h"
 #include "main.h"
-#include "windows.h"
+#include "registry.h"
 #include <string>
 
-std::string buffer = "";
-
 void ScratchFunction() {
+  static std::string buffer;
   ImGui::InputTextMultiline("##scratch_input", &buffer,
                             ImVec2(-FLT_MIN, -FLT_MIN));
 }

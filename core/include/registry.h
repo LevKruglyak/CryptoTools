@@ -18,7 +18,7 @@ inline std::vector<std::function<HelloImGui::DockableWindow()>>
     REFLECTED_WINDOWS;
 
 struct ReflectedNodeInfo {
-  const char *name;
+  std::string name;
   std::function<cptl::NodePtr()> create;
 };
 
@@ -31,15 +31,15 @@ inline std::map<std::string, std::vector<ReflectedNodeInfo>> REFLECTED_NODES;
 template <typename NODE> class NodeReflectionHelper {
 public:
   NodeReflectionHelper<NODE>(std::string group) {
-    const char *name = NODE::StaticNodeName();
+    std::string name = NODE::StaticNodeName();
     std::function<cptl::NodePtr()> function = [] {
       cptl::NodePtr ptr = std::make_shared<NODE>();
       return ptr;
     };
 
     REFLECTED_NODES[group].push_back({name, function});
-    std::cout << "[REGISTRY] Loaded node: " << NODE::StaticNodeName()
-              << std::endl;
+    std::cout << "[REGISTRY] Loaded node: " << NODE::StaticNodeName() << " ("
+              << group << ")" << std::endl;
   }
 };
 

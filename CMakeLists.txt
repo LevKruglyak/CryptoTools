@@ -18,7 +18,6 @@ FetchContent_MakeAvailable(fmt)
 
 FILE(GLOB SOURCES_CRYPTOTOOLS 
   ${CMAKE_CURRENT_LIST_DIR}/core/*.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/nodes/*.cpp
   ${CMAKE_CURRENT_LIST_DIR}/windows/*.cpp
   ${CMAKE_CURRENT_LIST_DIR}/lib/imnodes/*.cpp)
 
@@ -27,8 +26,8 @@ target_link_libraries(cryptotools PRIVATE fmt)
 target_link_libraries(cryptotools PRIVATE cryptopp)
 
 target_include_directories(cryptotools PRIVATE 
+  "${CMAKE_CURRENT_SOURCE_DIR}" 
   "${CMAKE_CURRENT_SOURCE_DIR}/core/include" 
-  "${CMAKE_CURRENT_SOURCE_DIR}/registry" 
   "${CMAKE_CURRENT_SOURCE_DIR}/lib/imnodes")
 
 target_compile_options(cryptotools PRIVATE -fsanitize=address)

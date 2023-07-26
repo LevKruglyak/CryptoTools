@@ -1,5 +1,5 @@
 #include "imgui.h"
-#include "windows.h"
+#include "main.h"
 
 void Run() {
   ImGui::TextUnformatted("Hello, World!");
@@ -9,9 +9,9 @@ void Run() {
   }
 }
 
-HelloImGui::DockableWindow CreateWindow_WINDOW_NAME() {
+HelloImGui::DockableWindow CreateWindow_Template() {
   HelloImGui::DockableWindow window;
-  window.label = "WINDOW_NAME";
+  window.label = "Example Window";
   window.dockSpaceName = DOCK_AREA;
   window.isVisible = false;
   window.GuiFunction = [&] { Run(); };
