@@ -6,7 +6,7 @@
 #include "imnodes.h"
 #include "integer.h"
 #include "misc/cpp/imgui_stdlib.h"
-#include <cryptopp/nbtheory.h>
+#include "nbtheory.h"
 #include <exception>
 #include <iostream>
 #include <map>
@@ -33,8 +33,10 @@ typedef std::shared_ptr<InPin> InPinPtr;
 /// shared_ptr to an output pin
 typedef std::shared_ptr<OutPin> OutPinPtr;
 
+inline int GLOBAL_ID = 0;
+
 /// Generate a globally unique ID
-int GenerateID();
+inline int GenerateID() { return GLOBAL_ID++; };
 
 /// Utility class for extra type safety when
 /// dealing with IDs
@@ -110,9 +112,8 @@ public:
   //   sink = std::make_shared<CryptoPP::StringSink>(data);
   // }
 
-  Buffer(const CryptoPP::byte *data, size_t length) {
-    Buffer(std::string(reinterpret_cast<const char *>(data), length));
-  }
+  Buffer(const CryptoPP::byte *data, size_t length)
+      : Buffer(std::string(reinterpret_cast<const char *>(data), length)) {}
 
   /// Return a constant pointer to a `char` array
   const char *const_char_ptr() const { return data.c_str(); }
@@ -159,6 +160,8 @@ public:
   }
 };
 
+inline Buffer empty_buffer;
+
 typedef CryptoPP::Integer Integer;
 
 class InPin : public Component<InPinID> {
@@ -175,7 +178,7 @@ class InPin : public Component<InPinID> {
     bool Display(const char *label, const float node_width) {
       const float textbox_width = node_width - ImGui::CalcTextSize(label).x;
 
-      ImGui::SetNextItemWidth(textbox_width);
+      ImGui::SetNextItemWidth(100.0);
       if (ImGui::InputText(label, &input_buffer,
                            ImGuiInputTextFlags_CharsDecimal)) {
         integer = Integer(input_buffer.c_str());
@@ -183,6 +186,14 @@ class InPin : public Component<InPinID> {
       }
 
       return false;
+    }
+
+    static void DisplayEmpty(const char *label) {
+      static std::string empty = "";
+      ImGui::SetNextItemWidth(0);
+      ImGui::InputText("##empty_label", &empty);
+      ImGui::SameLine();
+      ImGui::TextUnformatted(label);
     }
 
     const Integer &GetInteger() const { return integer; }
@@ -220,7 +231,7 @@ public:
         manual_input.reset(nullptr);
       }
 
-      ImGui::TextUnformatted(label);
+      ManualIntegerInput::DisplayEmpty(label);
     }
     ImNodes::EndInputAttribute();
     ImGui::PopID();
@@ -416,6 +427,12 @@ public:
     ImGui::TextUnformatted(label.c_str());
     ImNodes::EndNodeTitleBar();
 
+    // If there was an error
+    if (error && !error_toggle) {
+      error_toggle = true;
+      modified = true;
+    }
+
     for (auto pin : out_pins) {
       modified |= pin.second->Display(width);
     }
@@ -426,18 +443,6 @@ public:
     try {
       modified |= DisplayInternal();
     } catch (std::exception &e) {
-    }
-
-    // If there was an error, display it
-    if (error) {
-      if (!error_toggle) {
-        error_toggle = true;
-        modified = true;
-      }
-
-      ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + width);
-      ImGui::TextDisabled("[ERROR] %s", error_message.c_str());
-      ImGui::PopTextWrapPos();
     }
 
     ImGui::PopID();
@@ -479,6 +484,9 @@ public:
       }
     }
   }
+
+  bool HasError() { return error; }
+  std::string GetError() { return error_message; }
 
 protected:
   virtual bool DisplayInternal() { return false; };

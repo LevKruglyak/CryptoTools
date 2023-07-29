@@ -172,25 +172,6 @@ public:
   }
 };
 
-class NOTIntegerNode : public Node {
-  InPinID in1;
-  OutPinID out;
-
-public:
-  NODE_STATIC_NAME("NOT");
-  NOTIntegerNode() : Node(StaticNodeName()) {
-    in1 = AddInputPin("in", DataType::INTEGER);
-    out = AddOutputPin("out", DataType::INTEGER);
-  }
-
-  bool DisplayInternal() override { return false; }
-
-  void RecalculateInternal() override {
-    CryptoPP::Integer result = !GetInInteger(in1);
-    SetOutInteger(out, result);
-  }
-};
-
 class GCDIntegerNode : public Node {
   InPinID in1;
   InPinID in2;
@@ -387,7 +368,6 @@ DEFINE_NODE(ModulusIntegerNode, Arithmetic);
 DEFINE_NODE(ORIntegerNode, Arithmetic);
 DEFINE_NODE(ANDIntegerNode, Arithmetic);
 DEFINE_NODE(XORIntegerNode, Arithmetic);
-DEFINE_NODE(NOTIntegerNode, Arithmetic);
 DEFINE_NODE(ModularMultiplicationNode, Arithmetic);
 DEFINE_NODE(ModularExponentiationNode, Arithmetic);
 DEFINE_NODE(ModularSquareRootNode, Arithmetic);
